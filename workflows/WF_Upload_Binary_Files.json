@@ -1,0 +1,136 @@
+{
+  "name": "WF_Upload_Binary_Files",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://odqxdvauovdwnaxrashq.supabase.co/storage/v1/object/claims/{{ $('Explode_Binary_Files').item.json.internal_claim_id }}/{{ $('Explode_Binary_Files').item.json.source_field }}/{{ $('Explode_Binary_Files').item.json.file_name }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-upsert",
+              "value": "true"
+            },
+            {
+              "name": "Content-Type",
+              "value": "={{ $('Explode_Binary_Files').item.json.mime_type }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        0
+      ],
+      "id": "f998fb0e-c011-42f2-aae5-c72d1e547080",
+      "name": "uploads_files_to_supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\n\nfor (const item of items) {\n\n  const binaries = item.binary || {};\n\n  for (const key of Object.keys(binaries)) {\n\n    const file = binaries[key];\n\n    output.push({\n      json: {\n\n        internal_claim_id: item.json.internal_claim_id,\n\n        claim_number: item.json.claim_number,\n\n        source_field: key,\n\n        file_name: file.fileName,\n\n        mime_type: file.mimeType,\n\n        file_extension: file.fileExtension,\n\n        file_size: file.fileSize\n\n      },\n\n      binary: {\n        file: file\n      }\n    });\n\n  }\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "13ad4972-4f28-4e4b-a6fa-068fe304c792",
+      "name": "Explode_Binary_Files"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map((item, index) => {\n\n  const original =\n    $('Explode_Binary_Files').all()[index].json;\n\n  return {\n    json: {\n\n      internal_claim_id:\n        original.internal_claim_id,\n\n      claim_number:\n        original.claim_number,\n\n      source_field:\n        original.source_field,\n\n      file_name:\n        original.file_name,\n\n      mime_type:\n        original.mime_type,\n\n      file_extension:\n        original.file_extension,\n\n      file_size:\n        original.file_size,\n\n      storage_key:\n        item.json.Key,\n\n      storage_id:\n        item.json.Id,\n\n      upload_status:\n        'UPLOADED'\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ],
+      "id": "bf487c61-f99c-4e98-b768-7d6002d1a0d1",
+      "name": "Build_Metadata"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        0
+      ],
+      "id": "97e38d2c-792e-486f-9ec9-a0728c6beab5",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "uploads_files_to_supabase": {
+      "main": [
+        [
+          {
+            "node": "Build_Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explode_Binary_Files": {
+      "main": [
+        [
+          {
+            "node": "uploads_files_to_supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Explode_Binary_Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 5
+  },
+  "versionId": "04730515-2aca-4e59-b4ad-be4620d0a27a",
+  "meta": {
+    "instanceId": "ae4e48d5a6f5787668e3e31e4ca61012ccc4f24961dcb8bd327df4dd298b05cc"
+  },
+  "nodeGroups": [],
+  "id": "I02kVYrs36dv87fh",
+  "tags": []
+}

@@ -1,0 +1,2640 @@
+{
+  "name": "WF_MAIN_Insurance_Claims_Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const { randomUUID } = require('crypto');\n\nreturn [{\n  json: {\n    ...$json,\n    internal_claim_id: randomUUID()\n  },\n  binary: $binary\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5072,
+        -2512
+      ],
+      "id": "743d8a3e-83bf-4ffb-adde-163876f7e655",
+      "name": "Unique_claim_id_generator"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Custom_form",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -5280,
+        -2512
+      ],
+      "id": "40d3fcd3-ea5b-4ef8-a20a-315760b0b31f",
+      "name": "Webhook_post_trigger_URL",
+      "webhookId": "8c189a6d-bb27-4ab0-83c6-81b69da7a430"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6a6aa40b-2859-429b-bae3-85baa92ce13a",
+              "leftValue": "={{ $json.body['Name '] }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "1fa83bc0-7da2-4936-81c7-84a14a76c1d0",
+              "leftValue": "={{ $json.body['Policy Number'] }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "eb5c36a1-a533-4cb1-938a-7da2108fc7ec",
+              "leftValue": "={{ $json.body['Damage Photos'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "b44a194d-6b08-4f57-9883-fb66b4790421",
+              "leftValue": "={{ $json.body['Police Report'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -4784,
+        -2512
+      ],
+      "id": "0c5c750a-93dd-47f4-9af8-16adc4f7e26d",
+      "name": "Validates_data"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Processing Layer",
+        "height": 736,
+        "width": 3428,
+        "color": "#5D4A04"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5440,
+        -1904
+      ],
+      "typeVersion": 1,
+      "id": "4c5e369c-29d9-46ae-ac30-48f003164db7",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item) => ({\n  json: {\n\n    internal_claim_id:\n      item?.json?.internal_claim_id,\n\n    claim_id:\n      item?.json?.claim_id,\n\n    event_type: \"INGESTION_SUCCESS\",\n\n    workflow_stage: \"INGESTION\",\n\n    severity: \"INFO\",\n\n    success: true,\n\n    claim_status: \"RECEIVED\",\n\n    message: \"Claim successfully ingested.\",\n\n    timestamp: new Date().toISOString()\n\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3936,
+        -2672
+      ],
+      "id": "d27c13fd-a9c1-4758-9f1d-7faee6c5ee64",
+      "name": "Init_audit_trail_event"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Process Accepted\"\n}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -3312,
+        -2512
+      ],
+      "id": "b5f96065-aac1-42ba-86b1-2a82da66e32b",
+      "name": "202 Accepted"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Orchestration",
+        "height": 1024,
+        "width": 1732,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5424,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "de8295c4-32d0-4fa4-ba3b-dd73b01bc5fe",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Update_MAIN_CLAIMS_Table_Status').item.json.current_route }}",
+                    "rightValue": "AUTO_APPROVAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "678ea50b-456f-438b-a031-60d0d1ed1850"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bcac42d0-0a5f-4903-8776-803b8076edcb",
+                    "leftValue": "={{ $('Update_MAIN_CLAIMS_Table_Status').item.json.current_route }}",
+                    "rightValue": "MANUAL_REVIEW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b7420d8c-436f-4014-906a-72527c052255",
+                    "leftValue": "={{ $('Update_MAIN_CLAIMS_Table_Status').item.json.current_route }}",
+                    "rightValue": "FRAUD_INVESTIGATION",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -4976,
+        -880
+      ],
+      "id": "07023cc9-ea85-4794-8a44-a4c3d8db92fa",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_fraud_cases",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $json.claim_id }}"
+            },
+            {
+              "fieldId": "fraud_status",
+              "fieldValue": "={{ $json.fraud_status }}"
+            },
+            {
+              "fieldId": "fraud_risk_level",
+              "fieldValue": "={{ $json.fraud_level }}"
+            },
+            {
+              "fieldId": "assigned_investigator",
+              "fieldValue": "={{ $json[' assigned_investigator'] }}"
+            },
+            {
+              "fieldId": "fraud_indicators",
+              "fieldValue": "={{ $json.fraud_indicators }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -4208,
+        -416
+      ],
+      "id": "24d984f9-e1cf-49a6-9937-7fa99c71e76b",
+      "name": "Insert into fraud_cases + investigations",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 4. Output",
+        "height": 1024,
+        "width": 1664,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3680,
+        -1152
+      ],
+      "typeVersion": 1,
+      "id": "301d45d4-aa3f-46c9-9806-3bc4efab3759",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "jsCode": "const submittedAt = new Date($json.submitted_at);\nconst completedAt = new Date();\n\nconst totalLatencyMs = completedAt - submittedAt;\n\nconst slaTargetMs = 300000; // 5 mins\n\nconst slaBreached = totalLatencyMs > slaTargetMs;\n\nconst latencySeconds =\n  Math.floor(totalLatencyMs / 1000);\n\nconst latencyMinutes =\n  (totalLatencyMs / 1000 / 60).toFixed(2);\n\nreturn [\n{\n  json: {\n\n    claim_id:\n      $json.claim_id,\n\n    internal_claim_id:\n      $json.internal_claim_id,\n\n    metric_date:\n      completedAt.toISOString().split('T')[0],\n\n    metric_timestamp:\n      completedAt.toISOString(),\n\n    submitted_at:\n      submittedAt.toISOString(),\n\n    completed_at:\n      completedAt.toISOString(),\n\n    total_latency_ms:\n      totalLatencyMs,\n\n    latency_seconds:\n      latencySeconds,\n\n    latency_minutes:\n      Number(latencyMinutes),\n\n    sla_target_ms:\n      slaTargetMs,\n\n    sla_breached:\n      slaBreached,\n\n    claim_status:\n      $json.claim_status || 'UNKNOWN',\n\n    fraud_score:\n      $json.fraud_score || 0,\n\n    confidence_score:\n      $json.confidence_score || 0,\n\n    recommended_payout:\n      $json.recommended_payout || 0,\n\n    route_taken:\n      $json.route_taken || 'UNKNOWN'\n\n  }\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3392,
+        -816
+      ],
+      "id": "df34e8d9-8d82-4b7c-ad25-a2d91d583ab2",
+      "name": "Calculate_SLA_Metrics"
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_analytics",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $json.claim_id }}"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "ai_confidence",
+              "fieldValue": "={{ $json.confidence_score }}"
+            },
+            {
+              "fieldId": "sla_breached",
+              "fieldValue": "={{ $json.sla_breached }}"
+            },
+            {
+              "fieldId": "metric_date",
+              "fieldValue": "={{ $json.metric_date }}"
+            },
+            {
+              "fieldId": "metric_timestamp",
+              "fieldValue": "={{ $json.metric_timestamp }}"
+            },
+            {
+              "fieldId": "submitted_at",
+              "fieldValue": "={{ $json.submitted_at }}"
+            },
+            {
+              "fieldId": "completed_at",
+              "fieldValue": "={{ $json.completed_at }}"
+            },
+            {
+              "fieldId": "total_latency_ms",
+              "fieldValue": "={{ $json.total_latency_ms }}"
+            },
+            {
+              "fieldId": "latency_seconds",
+              "fieldValue": "={{ $json.latency_seconds }}"
+            },
+            {
+              "fieldId": "latency_minutes",
+              "fieldValue": "={{ $json.latency_minutes }}"
+            },
+            {
+              "fieldId": "sla_target_ms",
+              "fieldValue": "={{ $json.sla_target_ms }}"
+            },
+            {
+              "fieldId": "route_taken",
+              "fieldValue": "={{ $json.claim_status }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3168,
+        -816
+      ],
+      "id": "f66901f5-d76a-4628-a45c-11b6e0781076",
+      "name": "Insert_to_Analytics_Table",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c4ce7eeb-f98c-41cc-93d5-728a6d9374a8",
+              "leftValue": "={{ $('Insert_to_Analytics_Table').item.json.sla_breached }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2496,
+        -816
+      ],
+      "id": "9a7ab8be-1731-416b-9a9d-7cd6a9ed4c2f",
+      "name": "Alert_if_SLA_breached"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Injestion Layer",
+        "height": 800,
+        "width": 3396,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5424,
+        -2736
+      ],
+      "typeVersion": 1,
+      "id": "f67072a9-081d-40ee-8c35-a6e216266fe4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3b777a7e-a1ac-4aa8-9a42-0fb96bbdf54e",
+              "leftValue": "={{ $json.mime_type }}",
+              "rightValue": "image/",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -5040,
+        -1632
+      ],
+      "id": "366833dd-bca8-42a3-94eb-75c06c456c36",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "tableId": "Insuarance_claims",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claimant_name",
+              "fieldValue": "={{ $json.body['Name '] }}"
+            },
+            {
+              "fieldId": "claimant_email",
+              "fieldValue": "={{ $json.body['Email '] }}"
+            },
+            {
+              "fieldId": "claim_type",
+              "fieldValue": "={{ $json.body['Claim Type '] }}"
+            },
+            {
+              "fieldId": "claim_status",
+              "fieldValue": "RECIEVED"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "claim_number",
+              "fieldValue": "={{ $json.body['Claim Number'] }}"
+            },
+            {
+              "fieldId": "policy_number",
+              "fieldValue": "={{ $json.body['Policy Number'] }}"
+            },
+            {
+              "fieldId": "claimant_phone",
+              "fieldValue": "={{ $json.body['Phone number'] }}"
+            },
+            {
+              "fieldId": "vehicle_make",
+              "fieldValue": "={{ $json.body['Vehicle Make'] }}"
+            },
+            {
+              "fieldId": "vehicle_model",
+              "fieldValue": "={{ $json.body.Year }}"
+            },
+            {
+              "fieldId": "licence_plate",
+              "fieldValue": "={{ $json.body['Liscnece plate '] }}"
+            },
+            {
+              "fieldId": "vin",
+              "fieldValue": "={{ $json.body.Vin }}"
+            },
+            {
+              "fieldId": "estimated_damage_cost",
+              "fieldValue": "={{ $json.body['Damage cost'] }}"
+            },
+            {
+              "fieldId": "incident_date",
+              "fieldValue": "={{ $json.body['incident date'] }}"
+            },
+            {
+              "fieldId": "incident_time",
+              "fieldValue": "={{ $json.body['time '] }}"
+            },
+            {
+              "fieldId": "country",
+              "fieldValue": "={{ $json.body.country }}"
+            },
+            {
+              "fieldId": "city",
+              "fieldValue": "={{ $json.body['City '] }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $json.body['Description '] }}"
+            },
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $json.body['Claim Number'] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -4416,
+        -2672
+      ],
+      "id": "ce5691ba-501d-48ad-bc6f-ea4be7552d93",
+      "name": "Inserts_CLAIMS_MAIN_data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "={{ $json.internal_claim_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -3536,
+        -2512
+      ],
+      "id": "b3a32dfb-cc0b-4725-b386-fcb6a1507963",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n\n    internal_claim_id: $json.internal_claim_id,\n\n    claim_id: $json.claim_id,\n\n    workflow_stage: $json.workflow_stage,\n\n    event_type: $json.event_type,\n\n    severity: $json.severity,\n\n    message: $json.message,\n\n    event_status: $json.success ? 'SUCCESS' : 'FAILED',\n\n    metadata: {\n      source_field: $json.source_field,\n      file_name: $json.file_name,\n      mime_type: $json.mime_type,\n      storage_key: $json.storage_key\n    },\n\n    created_at: new Date().toISOString()\n\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3104,
+        -2512
+      ],
+      "id": "bafce0c0-370d-4586-abeb-314a03271319",
+      "name": "Normalize_Event_Schema"
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_audit_events",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "workflow_name",
+              "fieldValue": "={{ $json.claim_id }}"
+            },
+            {
+              "fieldId": "processing_stage",
+              "fieldValue": "={{ $json.workflow_stage }}"
+            },
+            {
+              "fieldId": "event_type",
+              "fieldValue": "={{ $json.event_type }}"
+            },
+            {
+              "fieldId": "audit_hash",
+              "fieldValue": "={{ $json.severity }}"
+            },
+            {
+              "fieldId": "event_payload",
+              "fieldValue": "={{ $json.message }}"
+            },
+            {
+              "fieldId": "event_status",
+              "fieldValue": "={{ $json.event_status }}"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2816,
+        -2512
+      ],
+      "id": "64b2f677-f60c-494d-9fe0-9e9586d48987",
+      "name": "Log_Event_Into_Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_claim_documents",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $('Validates_data').item.json.body['Claim Number'] }}"
+            },
+            {
+              "fieldId": "source_field",
+              "fieldValue": "={{ $json.source_field }}"
+            },
+            {
+              "fieldId": "file_name",
+              "fieldValue": "={{ $json.file_name }}"
+            },
+            {
+              "fieldId": "mime_type",
+              "fieldValue": "={{ $json.mime_type }}"
+            },
+            {
+              "fieldId": "file_extension",
+              "fieldValue": "={{ $json.file_extension }}"
+            },
+            {
+              "fieldId": "file_size",
+              "fieldValue": "={{ $json.file_size }}"
+            },
+            {
+              "fieldId": "storage_key",
+              "fieldValue": "={{ $json.storage_key }}"
+            },
+            {
+              "fieldId": "storage_id",
+              "fieldValue": "={{ $json.storage_id }}"
+            },
+            {
+              "fieldId": "upload_status",
+              "fieldValue": "={{ $json.upload_status }}"
+            },
+            {
+              "fieldId": "moderation_status",
+              "fieldValue": "PENDING"
+            },
+            {
+              "fieldId": "ocr_status",
+              "fieldValue": "PENDING"
+            },
+            {
+              "fieldId": "ai_processing_status",
+              "fieldValue": "PENDING"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3936,
+        -2368
+      ],
+      "id": "b4365df6-fc44-4021-a549-0d7890185863",
+      "name": "Update_Claim_File_Metadata_And_Review_Status",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "insurance_claim_documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "internal_claim_id",
+              "keyValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -5312,
+        -1632
+      ],
+      "id": "27d88b87-8edd-42fc-9690-8dc53dd887e3",
+      "name": "Get_Image_File",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "internal_claim_id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -3584,
+        -1632
+      ],
+      "id": "071e2918-2069-440f-a142-84a72b651454",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Insuarance_claims",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "internal_claim_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_status",
+              "fieldValue": "AI_REVIEW_COMPLETED"
+            },
+            {
+              "fieldId": "current_stage",
+              "fieldValue": "=ORCHESTRATION"
+            },
+            {
+              "fieldId": "current_route",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.selected_decision }}"
+            },
+            {
+              "fieldId": "confidence_score",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_confidence }}"
+            },
+            {
+              "fieldId": "fraud_level",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}"
+            },
+            {
+              "fieldId": "policy_covered",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.policy_validation_status }}"
+            },
+            {
+              "fieldId": "ai_processing_status",
+              "fieldValue": "COMPLETE"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "now()"
+            },
+            {
+              "fieldId": "ingestion_status",
+              "fieldValue": "COMPLETE"
+            },
+            {
+              "fieldId": "moderation_status",
+              "fieldValue": "COMPLETE"
+            },
+            {
+              "fieldId": "ocr_status",
+              "fieldValue": "COMPLETE"
+            },
+            {
+              "fieldId": "human_review_required",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.human_review_required }}"
+            },
+            {
+              "fieldId": "fraud_risk_level",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}"
+            },
+            {
+              "fieldId": "ai_decision_summary",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.executive_summary }}"
+            },
+            {
+              "fieldId": "routing_reason",
+              "fieldValue": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_explanation }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2800,
+        -1632
+      ],
+      "id": "ca64a65b-d94d-48a2-8e9f-d87f9a65bb5c",
+      "name": "Update_MAIN_CLAIMS_Table_Status",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_claim_reports",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "report_type",
+              "fieldValue": "={{ $json.claim_type }}"
+            },
+            {
+              "fieldId": "storage_path",
+              "fieldValue": "={{ $json.Key }}"
+            },
+            {
+              "fieldId": "generated_by",
+              "fieldValue": "={{ $json.generated_by }}"
+            },
+            {
+              "fieldId": "report_status",
+              "fieldValue": "COMPLETE"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3040,
+        -1632
+      ],
+      "id": "3b4b469e-9085-4783-9a3a-bc285b57d0ab",
+      "name": "Insert_to_PDF_Report_Table",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_audit_events",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "workflow_name",
+              "fieldValue": "={{ $json.claim_id }}"
+            },
+            {
+              "fieldId": "processing_stage",
+              "fieldValue": "=COMPLETE"
+            },
+            {
+              "fieldId": "event_type",
+              "fieldValue": "=PDF_REPORT_UPLOADED"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2480,
+        -1840
+      ],
+      "id": "f9f4f53c-d733-4ab9-a206-062a73e3e97d",
+      "name": "Log_Event_Into_Supabase4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Insuarance_claims",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "internal_claim_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Governance code').item.json.internal_claim_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_status",
+              "fieldValue": "APPROVED"
+            },
+            {
+              "fieldId": "current_stage",
+              "fieldValue": "=SETTLEMENT"
+            },
+            {
+              "fieldId": "current_route",
+              "fieldValue": "={{ $('Governance code').item.json.current_route }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -4656,
+        -1056
+      ],
+      "id": "fc1b899d-0aee-4223-a8dd-ee01d710cbf5",
+      "name": "Update_MAIN_CLAIMS_Status",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Insuarance_claims",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "internal_claim_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Governance code').item.json.internal_claim_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_status",
+              "fieldValue": "PENDING_HUMAN_REVIEW"
+            },
+            {
+              "fieldId": "current_stage",
+              "fieldValue": "=HUMAN_REVIEW"
+            },
+            {
+              "fieldId": "current_route",
+              "fieldValue": "={{ $('Governance code').item.json.current_route }}"
+            },
+            {
+              "fieldId": "orchestration_status",
+              "fieldValue": "COMPLETE"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -4672,
+        -864
+      ],
+      "id": "64920d02-d0ad-4208-ae34-582e43e25e2f",
+      "name": "Update_MAIN_CLAIMS_Status1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "Insuarance_claims",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "internal_claim_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Governance code').item.json.internal_claim_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_status",
+              "fieldValue": "REJECTED"
+            },
+            {
+              "fieldId": "current_stage",
+              "fieldValue": "=FRAUD_OPERATIONS"
+            },
+            {
+              "fieldId": "current_route",
+              "fieldValue": "={{ $('Governance code').item.json.current_route }}"
+            },
+            {
+              "fieldId": "orchestration_status",
+              "fieldValue": "COMPLETE"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -4672,
+        -640
+      ],
+      "id": "cca38900-c640-4e5c-a26c-19f13e3b2299",
+      "name": "Update_MAIN_CLAIMS_Status2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiDecision =\n  $json.decision;\n\nconst fraudRisk =\n  $json.fraud_level;\n\nconst humanReview =\n  $json.human_review_required === 'Yes';\n\nconst coverageEligibility =\n  $json.coverage_eligibility;\n\n\n\nlet current_route =\n  'AUTO_APPROVAL';\n\n\n\n// =====================================\n// HIGH RISK / FRAUD\n// =====================================\n\nif (\n  aiDecision === 'FRAUD_INVESTIGATION'\n  ||\n  fraudRisk?.toLowerCase() === 'high'\n) {\n\n  current_route =\n    'FRAUD_INVESTIGATION';\n\n}\n\n\n\n// =====================================\n// HUMAN REVIEW\n// =====================================\n\nelse if (\n  aiDecision === 'HUMAN_REVIEW'\n  ||\n  humanReview === true\n) {\n\n  current_route =\n    'MANUAL_REVIEW';\n\n}\n\n\n\n// =====================================\n// AUTO APPROVE\n// =====================================\n\nelse if (\n  aiDecision === 'AUTO_APPROVE'\n  &&\n  humanReview === false\n  &&\n  fraudRisk?.toLowerCase() !== 'high'\n  &&\n  coverageEligibility !== 'Ineligible'\n) {\n\n  current_route =\n    'AUTO_APPROVAL';\n\n}\n\n\n\nreturn [{\n  json: {\n    ...$json,\n\n    governance: {\n\n      ai_decision:\n        aiDecision,\n\n      fraud_risk:\n        fraudRisk,\n\n      human_review_required:\n        humanReview,\n\n      coverage_eligibility:\n        coverageEligibility,\n\n      route_to:\n        current_route\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5296,
+        -864
+      ],
+      "id": "bb2820ed-8bcb-4666-a280-8250b795ca94",
+      "name": "Governance code"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "pXg1jHIT0u3yQwXk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/pXg1jHIT0u3yQwXk",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Notify me"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4000,
+        -1056
+      ],
+      "id": "59414cb9-b3f3-4ae6-a470-73caa23cd08b",
+      "name": "Call 'Notify me'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OgxsY14bGasnJsmN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/OgxsY14bGasnJsmN",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Document_Intelligence"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4320,
+        -1408
+      ],
+      "id": "794cdc4b-3830-4f0a-9c6a-4cf27e41014a",
+      "name": "Call 'WF_Document_Intelligence'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "gHnGzjfc4ZKFhrVw",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/gHnGzjfc4ZKFhrVw",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Error_Validation_Missing_Fields"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -5264,
+        -2112
+      ],
+      "id": "e8163dd2-f974-45fd-a7a2-82fe800cff02",
+      "name": "Call 'WF_Error_Validation_Missing_Fields'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "I02kVYrs36dv87fh",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/I02kVYrs36dv87fh",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Upload_Binary_Files"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4432,
+        -2368
+      ],
+      "id": "57d062b6-e658-4b04-8863-f6129467eb32",
+      "name": "Call 'WF_Upload_Binary_Files'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Pd7IXLmvy4LHWxvt",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Pd7IXLmvy4LHWxvt",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Image_Safety_Gateway"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4608,
+        -1648
+      ],
+      "id": "007251f0-c5c4-465b-94f3-e56ff2b19c8d",
+      "name": "Call 'WF_Image_Safety_Gateway'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vAhOP56ircywvddf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vAhOP56ircywvddf",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Decision_and_Report_Creator"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -3232,
+        -1632
+      ],
+      "id": "0a500bef-14da-4ecb-96c7-955561d23274",
+      "name": "Call 'WF_Decision_and_Report_Creator'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "gsuJ72gbMVDgil1Z",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/gsuJ72gbMVDgil1Z",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Image_Intelligence"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4240,
+        -1648
+      ],
+      "id": "cf7d662f-5c82-4025-9028-47dce779862a",
+      "name": "Call 'WF_Image_Intelligence'"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "pXg1jHIT0u3yQwXk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/pXg1jHIT0u3yQwXk",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Notify me"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4000,
+        -864
+      ],
+      "id": "61376c9a-0927-4c81-a39e-affafe63f63c",
+      "name": "Call 'Notify me'1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "pXg1jHIT0u3yQwXk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/pXg1jHIT0u3yQwXk",
+          "cachedResultName": "Insurance_AI_Platform_DEV — WF_Notify me"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4016,
+        -640
+      ],
+      "id": "a014833c-b7fb-47a9-8d1c-07d6fc6ddf62",
+      "name": "Call 'WF_Notify me'"
+    },
+    {
+      "parameters": {
+        "sendTo": "ephmpofu@gmail.com",
+        "subject": "=SLA Breach Alert - Claim {{ $json.claim_id }}",
+        "message": "=<h2>🚨 SLA BREACH DETECTED</h2>\n\n<p>\n<strong>Claim ID:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.claim_id }}\n</p>\n\n<p>\n<strong>Internal Claim ID:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.internal_claim_id }}\n</p>\n\n<p>\n<strong>Total Latency:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.latency_minutes }} minutes\n</p>\n\n<p>\n<strong>SLA Target:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.sla_target_ms / 60000 }} minutes\n</p>\n\n<p>\n<strong>Status:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.claim_status }}\n</p>\n\n<p>\n<strong>Route Taken:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.route_taken }}\n</p>\n\n<p>\n<strong>Confidence Score:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.confidence_score }}\n</p>\n\n<p>\n<strong>Fraud Score:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.fraud_score }}\n</p>\n\n<p>\n<strong>Recommended Payout:</strong>\n${{ $('Calculate_SLA_Metrics').item.json.recommended_payout }}\n</p>\n\n<p>\n<strong>SLA Breached:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.sla_breached }}\n</p>\n\n<p>\n<strong>Timestamp:</strong>\n{{ $('Calculate_SLA_Metrics').item.json.metric_timestamp }}\n</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -2176,
+        -928
+      ],
+      "id": "ca9d2704-1626-49bb-8b3b-db9b0027fede",
+      "name": "Send a message",
+      "webhookId": "4bab3eaf-629c-4663-906c-b49510a4670f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vWcU7JmbGbvotBWc",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://odqxdvauovdwnaxrashq.supabase.co/rest/v1/rpc/refresh_dashboard_metrics",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_secret_iQIDIr7oO0fZJq5LgXBoaA_Cvphr_nz"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_secret_iQIDIr7oO0fZJq5LgXBoaA_Cvphr_nz"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2752,
+        -816
+      ],
+      "id": "fc7a55c0-d701-454e-afb5-d38e4cfc5647",
+      "name": "HTTP Request refresh_dashboard_metrics_Function"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://odqxdvauovdwnaxrashq.supabase.co/rest/v1/rpc/update_daily_summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_secret_iQIDIr7oO0fZJq5LgXBoaA_Cvphr_nz"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_secret_iQIDIr7oO0fZJq5LgXBoaA_Cvphr_nz"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "p_summary_date",
+              "value": "={{$json.metric_date || \"2026-05-26\"}}"
+            },
+            {
+              "name": "p_claim_status",
+              "value": "={{$json.claim_status || \"UNKNOWN\"}}"
+            },
+            {
+              "name": "p_latency_ms",
+              "value": "={{$json.total_latency_ms || 0}}"
+            },
+            {
+              "name": "p_recommended_payout",
+              "value": "={{$json.recommended_payout || 0}}"
+            },
+            {
+              "name": "p_sla_breached",
+              "value": "={{$json.sla_breached === true}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2976,
+        -816
+      ],
+      "id": "21126a91-eeb4-4795-a4fb-3f7540d340c5",
+      "name": "HTTP Request update_daily_summary_Function"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "88bed8a4-b3aa-4717-a543-3a7623b213b5",
+              "name": "internal_claim_id",
+              "value": "={{ $json.internal_claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "750645a2-1300-40f9-a0b0-3ca998feda7a",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6407a2a7-d692-47d6-962b-bad3bb7f0a89",
+              "name": "fraud_status",
+              "value": "OPEN",
+              "type": "string"
+            },
+            {
+              "id": "a5af5387-e42d-42fd-a509-68319d30cf90",
+              "name": "fraud_level",
+              "value": "={{ $json.fraud_level }}",
+              "type": "string"
+            },
+            {
+              "id": "3189a168-dec0-432d-8b8f-bff2ec5539e0",
+              "name": "confidence_score",
+              "value": "={{ $json.confidence_score }}",
+              "type": "number"
+            },
+            {
+              "id": "cd25d71c-4e31-4a4f-9b98-029901392f6c",
+              "name": " assigned_investigator",
+              "value": "Ephraim Mpofu",
+              "type": "string"
+            },
+            {
+              "id": "8b88a7a9-96c8-44d8-86fc-eef68b195d7c",
+              "name": "selected_decision",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.selected_decision }}",
+              "type": "string"
+            },
+            {
+              "id": "f6878e7a-1119-43ae-86dd-ff84f988a748",
+              "name": "fraud_indicators",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "6243ff6b-2803-4e1f-adda-cfce6c11b494",
+              "name": "report_storage_key",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.Key }}",
+              "type": "string"
+            },
+            {
+              "id": "a8cb5b6e-c7fb-4b65-9d00-b45d812f90bf",
+              "name": "generated_by",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.generated_by }}",
+              "type": "string"
+            },
+            {
+              "id": "307c3057-c3a8-480c-b6c6-ab27355920d1",
+              "name": "decision_confidence",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "442ba8e6-7de6-4966-bb29-0f135d7999d0",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "cd51ebb8-b1cf-4777-813b-7991f3f250ea",
+              "name": "coverage_eligibility",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.coverage_eligibility }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c01302da-b6e4-4223-9eb1-f29fde426766",
+              "name": "executive_summary",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.executive_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "ceaca459-e054-47a8-a77d-4f12eb40d42f",
+              "name": "claim_overview",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.claim_overview }}",
+              "type": "string"
+            },
+            {
+              "id": "8f8727e0-b98e-43df-95fc-50d4ba1d6271",
+              "name": "policy_validation_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.policy_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "f404eec3-b147-4e5a-a66c-ba368754d3d1",
+              "name": "document_analysis_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.document_analysis_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "62032e6a-8c62-4dbb-83b1-32d425e9915a",
+              "name": "fraud_risk_assessment",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_assessment }}",
+              "type": "string"
+            },
+            {
+              "id": "7974bb8a-b2d0-42f2-ac4b-e27ebfb2ada2",
+              "name": "human_review_required",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.human_review_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "00406c7a-37a5-48fa-84cd-eb84476d55f5",
+              "name": "cross_validation_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.cross_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "b65f3153-ff0a-4ea7-8c8d-c586b13eef1b",
+              "name": "decision_explanation",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_explanation }}",
+              "type": "string"
+            },
+            {
+              "id": "2bc69123-66be-4c38-b87f-05a8213c9f38",
+              "name": "recommended_next_actions",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.recommended_next_actions }}",
+              "type": "string"
+            },
+            {
+              "id": "6fd0911c-f4e7-44ef-be44-f8bf15849e61",
+              "name": "operational_review_notes",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.operational_review_notes }}",
+              "type": "string"
+            },
+            {
+              "id": "5130b4b5-a0e6-4634-b5ed-c04c5bcbce4e",
+              "name": "fraud_investigation_required",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_investigation_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "498afc52-ac1d-466b-ab42-1df1ebafac5c",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "8912a476-7526-4e32-bcbc-4839589ed2e6",
+              "name": "fraud_indicators",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "86947fb9-a99a-4d21-b8cc-93d1942e712f",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "cfe4bf2e-1370-4f99-91f5-be735dec7a40",
+              "name": "claimant_name",
+              "value": "={{ $json.claimant_name }}",
+              "type": "string"
+            },
+            {
+              "id": "676c2c2f-d118-45b9-9847-203c6a04d3c7",
+              "name": "claimant_email",
+              "value": "={{ $json.claimant_email }}",
+              "type": "string"
+            },
+            {
+              "id": "6ab010eb-e218-48a1-a8da-ea1af0955e39",
+              "name": "claim_number",
+              "value": "={{ $json.claim_number }}",
+              "type": "string"
+            },
+            {
+              "id": "a3203131-eb9e-4b58-8219-cdce5039f138",
+              "name": "estimated_damage_cost",
+              "value": "={{ $json.estimated_damage_cost }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4368,
+        -864
+      ],
+      "id": "a02e3009-e9ff-435c-bc97-29706f3ec410",
+      "name": "Nomalise_Schema_for_Notifications1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "88bed8a4-b3aa-4717-a543-3a7623b213b5",
+              "name": "internal_claim_id",
+              "value": "={{ $json.internal_claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "750645a2-1300-40f9-a0b0-3ca998feda7a",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6407a2a7-d692-47d6-962b-bad3bb7f0a89",
+              "name": "fraud_status",
+              "value": "OPEN",
+              "type": "string"
+            },
+            {
+              "id": "a5af5387-e42d-42fd-a509-68319d30cf90",
+              "name": "fraud_level",
+              "value": "={{ $json.fraud_level }}",
+              "type": "string"
+            },
+            {
+              "id": "3189a168-dec0-432d-8b8f-bff2ec5539e0",
+              "name": "confidence_score",
+              "value": "={{ $json.confidence_score }}",
+              "type": "number"
+            },
+            {
+              "id": "cd25d71c-4e31-4a4f-9b98-029901392f6c",
+              "name": " assigned_investigator",
+              "value": "Ephraim Mpofu",
+              "type": "string"
+            },
+            {
+              "id": "8b88a7a9-96c8-44d8-86fc-eef68b195d7c",
+              "name": "selected_decision",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.selected_decision }}",
+              "type": "string"
+            },
+            {
+              "id": "f6878e7a-1119-43ae-86dd-ff84f988a748",
+              "name": "fraud_indicators",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "6243ff6b-2803-4e1f-adda-cfce6c11b494",
+              "name": "report_storage_key",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.Key }}",
+              "type": "string"
+            },
+            {
+              "id": "a8cb5b6e-c7fb-4b65-9d00-b45d812f90bf",
+              "name": "generated_by",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.generated_by }}",
+              "type": "string"
+            },
+            {
+              "id": "307c3057-c3a8-480c-b6c6-ab27355920d1",
+              "name": "decision_confidence",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "442ba8e6-7de6-4966-bb29-0f135d7999d0",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "cd51ebb8-b1cf-4777-813b-7991f3f250ea",
+              "name": "coverage_eligibility",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.coverage_eligibility }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c01302da-b6e4-4223-9eb1-f29fde426766",
+              "name": "executive_summary",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.executive_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "ceaca459-e054-47a8-a77d-4f12eb40d42f",
+              "name": "claim_overview",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.claim_overview }}",
+              "type": "string"
+            },
+            {
+              "id": "8f8727e0-b98e-43df-95fc-50d4ba1d6271",
+              "name": "policy_validation_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.policy_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "f404eec3-b147-4e5a-a66c-ba368754d3d1",
+              "name": "document_analysis_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.document_analysis_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "62032e6a-8c62-4dbb-83b1-32d425e9915a",
+              "name": "fraud_risk_assessment",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_assessment }}",
+              "type": "string"
+            },
+            {
+              "id": "7974bb8a-b2d0-42f2-ac4b-e27ebfb2ada2",
+              "name": "human_review_required",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.human_review_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "00406c7a-37a5-48fa-84cd-eb84476d55f5",
+              "name": "cross_validation_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.cross_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "b65f3153-ff0a-4ea7-8c8d-c586b13eef1b",
+              "name": "decision_explanation",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_explanation }}",
+              "type": "string"
+            },
+            {
+              "id": "2bc69123-66be-4c38-b87f-05a8213c9f38",
+              "name": "recommended_next_actions",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.recommended_next_actions }}",
+              "type": "string"
+            },
+            {
+              "id": "6fd0911c-f4e7-44ef-be44-f8bf15849e61",
+              "name": "operational_review_notes",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.operational_review_notes }}",
+              "type": "string"
+            },
+            {
+              "id": "5130b4b5-a0e6-4634-b5ed-c04c5bcbce4e",
+              "name": "fraud_investigation_required",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_investigation_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "498afc52-ac1d-466b-ab42-1df1ebafac5c",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "8912a476-7526-4e32-bcbc-4839589ed2e6",
+              "name": "fraud_indicators",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "86947fb9-a99a-4d21-b8cc-93d1942e712f",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "cfe4bf2e-1370-4f99-91f5-be735dec7a40",
+              "name": "claimant_name",
+              "value": "={{ $json.claimant_name }}",
+              "type": "string"
+            },
+            {
+              "id": "676c2c2f-d118-45b9-9847-203c6a04d3c7",
+              "name": "claimant_email",
+              "value": "={{ $json.claimant_email }}",
+              "type": "string"
+            },
+            {
+              "id": "6ab010eb-e218-48a1-a8da-ea1af0955e39",
+              "name": "claim_number",
+              "value": "={{ $json.claim_number }}",
+              "type": "string"
+            },
+            {
+              "id": "a3203131-eb9e-4b58-8219-cdce5039f138",
+              "name": "estimated_damage_cost",
+              "value": "={{ $json.estimated_damage_cost }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4368,
+        -640
+      ],
+      "id": "35644d4c-8ca9-4882-897b-aaf136a5109d",
+      "name": "Nomalise_Schema_for_Notifications"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "88bed8a4-b3aa-4717-a543-3a7623b213b5",
+              "name": "internal_claim_id",
+              "value": "={{ $json.internal_claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "750645a2-1300-40f9-a0b0-3ca998feda7a",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "6407a2a7-d692-47d6-962b-bad3bb7f0a89",
+              "name": "fraud_status",
+              "value": "OPEN",
+              "type": "string"
+            },
+            {
+              "id": "a5af5387-e42d-42fd-a509-68319d30cf90",
+              "name": "fraud_level",
+              "value": "={{ $json.fraud_level }}",
+              "type": "string"
+            },
+            {
+              "id": "3189a168-dec0-432d-8b8f-bff2ec5539e0",
+              "name": "confidence_score",
+              "value": "={{ $json.confidence_score }}",
+              "type": "number"
+            },
+            {
+              "id": "cd25d71c-4e31-4a4f-9b98-029901392f6c",
+              "name": " assigned_investigator",
+              "value": "Ephraim Mpofu",
+              "type": "string"
+            },
+            {
+              "id": "8b88a7a9-96c8-44d8-86fc-eef68b195d7c",
+              "name": "selected_decision",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.selected_decision }}",
+              "type": "string"
+            },
+            {
+              "id": "f6878e7a-1119-43ae-86dd-ff84f988a748",
+              "name": "fraud_indicators",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "6243ff6b-2803-4e1f-adda-cfce6c11b494",
+              "name": "report_storage_key",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.Key }}",
+              "type": "string"
+            },
+            {
+              "id": "a8cb5b6e-c7fb-4b65-9d00-b45d812f90bf",
+              "name": "generated_by",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.generated_by }}",
+              "type": "string"
+            },
+            {
+              "id": "307c3057-c3a8-480c-b6c6-ab27355920d1",
+              "name": "decision_confidence",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "442ba8e6-7de6-4966-bb29-0f135d7999d0",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "cd51ebb8-b1cf-4777-813b-7991f3f250ea",
+              "name": "coverage_eligibility",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.coverage_eligibility }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c01302da-b6e4-4223-9eb1-f29fde426766",
+              "name": "executive_summary",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.executive_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "ceaca459-e054-47a8-a77d-4f12eb40d42f",
+              "name": "claim_overview",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.claim_overview }}",
+              "type": "string"
+            },
+            {
+              "id": "8f8727e0-b98e-43df-95fc-50d4ba1d6271",
+              "name": "policy_validation_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.policy_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "f404eec3-b147-4e5a-a66c-ba368754d3d1",
+              "name": "document_analysis_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.document_analysis_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "62032e6a-8c62-4dbb-83b1-32d425e9915a",
+              "name": "fraud_risk_assessment",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_assessment }}",
+              "type": "string"
+            },
+            {
+              "id": "7974bb8a-b2d0-42f2-ac4b-e27ebfb2ada2",
+              "name": "human_review_required",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.human_review_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "00406c7a-37a5-48fa-84cd-eb84476d55f5",
+              "name": "cross_validation_findings",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.cross_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "b65f3153-ff0a-4ea7-8c8d-c586b13eef1b",
+              "name": "decision_explanation",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.decision_explanation }}",
+              "type": "string"
+            },
+            {
+              "id": "2bc69123-66be-4c38-b87f-05a8213c9f38",
+              "name": "recommended_next_actions",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.recommended_next_actions }}",
+              "type": "string"
+            },
+            {
+              "id": "6fd0911c-f4e7-44ef-be44-f8bf15849e61",
+              "name": "operational_review_notes",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.operational_review_notes }}",
+              "type": "string"
+            },
+            {
+              "id": "5130b4b5-a0e6-4634-b5ed-c04c5bcbce4e",
+              "name": "fraud_investigation_required",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_investigation_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "498afc52-ac1d-466b-ab42-1df1ebafac5c",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "8912a476-7526-4e32-bcbc-4839589ed2e6",
+              "name": "fraud_indicators",
+              "value": "={{ $('Call \\'WF_Decision_and_Report_Creator\\'').item.json.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "86947fb9-a99a-4d21-b8cc-93d1942e712f",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "cfe4bf2e-1370-4f99-91f5-be735dec7a40",
+              "name": "claimant_name",
+              "value": "={{ $json.claimant_name }}",
+              "type": "string"
+            },
+            {
+              "id": "676c2c2f-d118-45b9-9847-203c6a04d3c7",
+              "name": "claimant_email",
+              "value": "={{ $json.claimant_email }}",
+              "type": "string"
+            },
+            {
+              "id": "6ab010eb-e218-48a1-a8da-ea1af0955e39",
+              "name": "claim_number",
+              "value": "={{ $json.claim_number }}",
+              "type": "string"
+            },
+            {
+              "id": "a3203131-eb9e-4b58-8219-cdce5039f138",
+              "name": "estimated_damage_cost",
+              "value": "={{ $json.estimated_damage_cost }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4368,
+        -1056
+      ],
+      "id": "a2322c5b-f97e-4c4f-9fb6-0a26e404a96c",
+      "name": "Nomalise_Schema_for_Notifications2"
+    }
+  ],
+  "pinData": {
+    "Webhook_post_trigger_URL": [
+      {
+        "json": {
+          "headers": {
+            "host": "ephraimmpofu.app.n8n.cloud",
+            "user-agent": "PostmanRuntime/7.54.0",
+            "content-length": "240321",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cache-control": "no-cache",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "54.86.50.139",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "a023170b2d806fda-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundary0GF803WyEWfC6pwW",
+            "postman-token": "58c3b63e-b131-4040-88d7-d3bf01c6ecf0",
+            "x-forwarded-for": "54.86.50.139, 172.70.175.211",
+            "x-forwarded-host": "ephraimmpofu.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-23-7c57f74b7b-2h99l",
+            "x-is-trusted": "yes",
+            "x-real-ip": "54.86.50.139"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "Name ": "Karen Muller ",
+            "Email ": "ephmpofu@gmail.com",
+            "Phone number": "06776488376",
+            "Policy Number": "AT-MTR-558219",
+            "Claim Type ": "Vehicle Collision Claim",
+            "Claim Number": "VCL-2026-02261806",
+            "Vehicle Make": "BMW",
+            "Model": "M6 Competition",
+            "Year": "2026",
+            "Liscnece plate ": "AU333X",
+            "Vin": "WBS202519941996",
+            "Damage cost": "9000",
+            "incident date": "2026-05-12",
+            "time ": "19:45",
+            "country": "Austria",
+            "City ": "Vienna",
+            "Description ": "It was raining and another car bumped into my car, also the tar was icy"
+          },
+          "webhookUrl": "https://ephraimmpofu.app.n8n.cloud/webhook/Custom_form",
+          "executionMode": "production"
+        },
+        "binary": {
+          "Damage Photos": {
+            "mimeType": "image/jpeg",
+            "fileType": "image",
+            "fileExtension": "jpg",
+            "data": "filesystem-v2",
+            "fileName": "BMW M6_2 damage.jpg",
+            "id": "filesystem-v2:workflows/0FOGfaLHyZlMECxx/executions/1503/binary_data/90d54c34-db57-43e3-8d94-52ce465c02cb",
+            "fileSize": "234 kB",
+            "bytes": 233705
+          },
+          "Police Report": {
+            "mimeType": "application/pdf",
+            "fileType": "pdf",
+            "fileExtension": "pdf",
+            "data": "filesystem-v2",
+            "fileName": "Verified_Insurance_Police_Report.pdf",
+            "id": "filesystem-v2:workflows/0FOGfaLHyZlMECxx/executions/1503/binary_data/f70fc4cf-0c94-4ea9-bc1f-add001c45140",
+            "fileSize": "4.36 kB",
+            "bytes": 4364
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Unique_claim_id_generator": {
+      "main": [
+        [
+          {
+            "node": "Validates_data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook_post_trigger_URL": {
+      "main": [
+        [
+          {
+            "node": "Unique_claim_id_generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validates_data": {
+      "main": [
+        [
+          {
+            "node": "Inserts_CLAIMS_MAIN_data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call 'WF_Upload_Binary_Files'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WF_Error_Validation_Missing_Fields'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init_audit_trail_event": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Update_MAIN_CLAIMS_Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update_MAIN_CLAIMS_Status1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update_MAIN_CLAIMS_Status2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert into fraud_cases + investigations": {
+      "main": [
+        []
+      ]
+    },
+    "Calculate_SLA_Metrics": {
+      "main": [
+        [
+          {
+            "node": "Insert_to_Analytics_Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert_to_Analytics_Table": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request update_daily_summary_Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert_if_SLA_breached": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Call 'WF_Image_Safety_Gateway'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call 'WF_Document_Intelligence'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inserts_CLAIMS_MAIN_data": {
+      "main": [
+        [
+          {
+            "node": "Init_audit_trail_event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "202 Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "202 Accepted": {
+      "main": [
+        [
+          {
+            "node": "Normalize_Event_Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize_Event_Schema": {
+      "main": [
+        [
+          {
+            "node": "Log_Event_Into_Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log_Event_Into_Supabase": {
+      "main": [
+        []
+      ]
+    },
+    "Update_Claim_File_Metadata_And_Review_Status": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Get_Image_File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Image_File": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Call 'WF_Decision_and_Report_Creator'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert_to_PDF_Report_Table": {
+      "main": [
+        [
+          {
+            "node": "Update_MAIN_CLAIMS_Table_Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_MAIN_CLAIMS_Table_Status": {
+      "main": [
+        [
+          {
+            "node": "Governance code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log_Event_Into_Supabase4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_MAIN_CLAIMS_Status": {
+      "main": [
+        [
+          {
+            "node": "Nomalise_Schema_for_Notifications2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_MAIN_CLAIMS_Status1": {
+      "main": [
+        [
+          {
+            "node": "Nomalise_Schema_for_Notifications1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_MAIN_CLAIMS_Status2": {
+      "main": [
+        [
+          {
+            "node": "Nomalise_Schema_for_Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Governance code": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Notify me'": {
+      "main": [
+        [
+          {
+            "node": "Calculate_SLA_Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF_Document_Intelligence'": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Call 'WF_Error_Validation_Missing_Fields'": {
+      "main": [
+        []
+      ]
+    },
+    "Call 'WF_Upload_Binary_Files'": {
+      "main": [
+        [
+          {
+            "node": "Update_Claim_File_Metadata_And_Review_Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF_Image_Safety_Gateway'": {
+      "main": [
+        [
+          {
+            "node": "Call 'WF_Image_Intelligence'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF_Decision_and_Report_Creator'": {
+      "main": [
+        [
+          {
+            "node": "Insert_to_PDF_Report_Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF_Image_Intelligence'": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Notify me'1": {
+      "main": [
+        [
+          {
+            "node": "Calculate_SLA_Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'WF_Notify me'": {
+      "main": [
+        [
+          {
+            "node": "Calculate_SLA_Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request update_daily_summary_Function": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request refresh_dashboard_metrics_Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request refresh_dashboard_metrics_Function": {
+      "main": [
+        [
+          {
+            "node": "Alert_if_SLA_breached",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nomalise_Schema_for_Notifications1": {
+      "main": [
+        [
+          {
+            "node": "Call 'Notify me'1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nomalise_Schema_for_Notifications": {
+      "main": [
+        [
+          {
+            "node": "Call 'WF_Notify me'",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert into fraud_cases + investigations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nomalise_Schema_for_Notifications2": {
+      "main": [
+        [
+          {
+            "node": "Call 'Notify me'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "25b6117c-5dcf-42fa-8c3e-d6dbc5229397",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ae4e48d5a6f5787668e3e31e4ca61012ccc4f24961dcb8bd327df4dd298b05cc"
+  },
+  "nodeGroups": [],
+  "id": "0FOGfaLHyZlMECxx",
+  "tags": []
+}

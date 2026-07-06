@@ -1,0 +1,180 @@
+{
+  "name": "WF_Error_Validation_Missing_Fields",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d687776b-fa96-4c1d-8cf3-6cf94cecd0b8",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"error\",\n  \"message\": \"Validation failed\",\n  \"reason\": \"Missing required fields\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        512,
+        0
+      ],
+      "id": "1c0e27b9-8539-48cb-9f82-a32ef14c3c87",
+      "name": "returns_missingfields_validation_error"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      event_type: \"VALIDATION_ERROR\",\n      event_code: \"VAL_001\",\n      workflow_stage: \"INGESTION\",\n      success: false,\n      severity: \"ERROR\",\n      claim_status: \"REJECTED_INVALID_INPUT\",\n      message: \"Required claim fields are missing.\",\n      details: {\n        missing_fields: $json.missing_fields || []\n      },\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        0
+      ],
+      "id": "fc7edae2-7984-486e-956d-bbf0f20dc6e9",
+      "name": "validation error code"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n\n    internal_claim_id: $json.internal_claim_id,\n\n    claim_id: $json.claim_id,\n\n    workflow_stage: $json.workflow_stage,\n\n    event_type: $json.event_type,\n\n    severity: $json.severity,\n\n    message: $json.message,\n\n    event_status: $json.success ? 'SUCCESS' : 'FAILED',\n\n    metadata: {\n      source_field: $json.source_field,\n      file_name: $json.file_name,\n      mime_type: $json.mime_type,\n      storage_key: $json.storage_key\n    },\n\n    created_at: new Date().toISOString()\n\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "b53dae28-7982-4dd6-835e-1431c5e669f8",
+      "name": "Normalize_Event_Schema1"
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_audit_events",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "workflow_name",
+              "fieldValue": "={{ $json.claim_id }}"
+            },
+            {
+              "fieldId": "processing_stage",
+              "fieldValue": "={{ $json.workflow_stage }}"
+            },
+            {
+              "fieldId": "event_type",
+              "fieldValue": "={{ $json.event_type }}"
+            },
+            {
+              "fieldId": "audit_hash",
+              "fieldValue": "={{ $json.severity }}"
+            },
+            {
+              "fieldId": "event_payload",
+              "fieldValue": "={{ $json.message }}"
+            },
+            {
+              "fieldId": "event_status",
+              "fieldValue": "={{ $json.event_status }}"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        992,
+        0
+      ],
+      "id": "ba84381b-a241-4351-b6b1-a0916fce998a",
+      "name": "Log_Event_Into_Supabase1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "validation error code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "returns_missingfields_validation_error": {
+      "main": [
+        [
+          {
+            "node": "Normalize_Event_Schema1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validation error code": {
+      "main": [
+        [
+          {
+            "node": "returns_missingfields_validation_error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize_Event_Schema1": {
+      "main": [
+        [
+          {
+            "node": "Log_Event_Into_Supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 5
+  },
+  "versionId": "7ce111c8-0888-4bce-af1e-afd8447ab3a1",
+  "meta": {
+    "instanceId": "ae4e48d5a6f5787668e3e31e4ca61012ccc4f24961dcb8bd327df4dd298b05cc"
+  },
+  "nodeGroups": [],
+  "id": "gHnGzjfc4ZKFhrVw",
+  "tags": []
+}

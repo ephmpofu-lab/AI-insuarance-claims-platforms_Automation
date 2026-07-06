@@ -1,0 +1,277 @@
+{
+  "name": "WF_Image_Intelligence",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "03b1b9aa-23fd-4398-829d-0bc3c619f2f5",
+      "name": "Audit_Event_Logger_Trigger"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        304
+      ],
+      "id": "30948df7-9628-4d44-99de-35c232eeca31",
+      "name": "GPT 4o mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "ISCreQoZk3NWaiDs",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"required\": [\n    \"damage_detected\",\n    \"damage_type\",\n    \"damage_severity\",\n    \"affected_parts\",\n    \"vehicle_condition\",\n    \"airbag_deployed\",\n    \"estimated_visual_damage_usd\",\n    \"possible_fraud_signals\",\n    \"confidence_score\"\n  ],\n  \"properties\": {\n    \"damage_detected\": {\n      \"type\": \"boolean\"\n    },\n\n    \"damage_type\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n\n    \"damage_severity\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"MINOR\",\n        \"MODERATE\",\n        \"SEVERE\",\n        \"TOTAL_LOSS\"\n      ]\n    },\n\n    \"affected_parts\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n\n    \"vehicle_condition\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"DRIVABLE\",\n        \"LIMITED_DRIVABILITY\",\n        \"NON_DRIVABLE\"\n      ]\n    },\n\n    \"airbag_deployed\": {\n      \"type\": \"boolean\"\n    },\n\n    \"estimated_visual_damage_eur\": {\n      \"type\": \"number\",\n      \"minimum\": 0\n    },\n\n    \"possible_fraud_signals\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n\n    \"confidence_score\": {\n      \"type\": \"number\",\n      \"minimum\": 0,\n      \"maximum\": 1\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        320
+      ],
+      "id": "031b8f80-0e67-405f-8b29-3b97eb484008",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "url": "=https://odqxdvauovdwnaxrashq.supabase.co/storage/v1/object/public/{{$json.storage_key}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        0
+      ],
+      "id": "350a8df7-1381-4a77-98bf-2bae07524ae4",
+      "name": "Download_image_after_security_check",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "############################################################\n########################## PART 1 ##########################\n########################### TASK ###########################\n############################################################\n\nAnalyze the uploaded insurance vehicle damage image and populate the connected structured output schema accurately.\n\nPrioritize:\n- conservative assessment\n- deterministic extraction\n- precision over recall\n\n############################################################\n########################## PART 2 ##########################\n##################### CONTEXT INJECTION ####################\n############################################################\n\nAnalyze the uploaded vehicle damage image.\n\n############################################################\n########################## PART 3 ##########################\n#################### ASSESSMENT CONTEXT ####################\n############################################################\n\nASSESSMENT REQUIREMENTS:\n\nDetermine:\n- whether visible damage exists\n- visible damage types\n- affected vehicle parts\n- damage severity\n- vehicle drivability\n- airbag deployment visibility\n- possible fraud inconsistencies\n- confidence score\n\nUse ONLY visible image evidence.\n\n- Never hallucinate image contents.\n- Never infer hidden damage.\n- Never fabricate affected parts.\n- Prefer conservative assessment when uncertain.\n\nUse ONLY these severity values:\n- MINOR\n- MODERATE\n- SEVERE\n- TOTAL_LOSS\n\n############################################################\n########################## PART 4 ##########################\n###################### OUTPUT REMINDER #####################\n############################################################\n\nGenerate output strictly according to the connected structured output schema.\n\nIMPORTANT:\n- Do not create wrapper objects.\n- Do not wrap the response inside:\n  {\n    \"output\": { }\n  }\n\nNever guess image contents.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "############################################################\n########################## ① ROLE ##########################\n############################################################\n\nYou are an enterprise vehicle damage assessment AI specialized in insurance claim image analysis.\n\nYou operate inside an automated insurance workflow where outputs are consumed directly by:\n\n- structured parsers\n- fraud review systems\n- claims automation workflows\n- downstream AI agents\n- compliance systems\n\nYour outputs must be:\n- deterministic\n- machine-consumable\n- schema-compliant\n- audit-safe\n\nYou are optimized for:\n- visual vehicle damage assessment\n- affected part identification\n- severity estimation\n- conservative fraud detection\n- low hallucination behavior\n\nBe concise.\nDo NOT use conversational language.\nDo NOT explain reasoning outside the generated output.\n\n############################################################\n######################## ② CONTEXT #########################\n############################################################\n\nYou will receive uploaded vehicle damage images related to insurance claims.\n\nImages may contain:\n- collision damage\n- cosmetic damage\n- severe structural damage\n- unclear visibility\n- partial vehicle visibility\n- low-quality evidence\n- inconsistent visual evidence\n\nYour responsibilities are to:\n\n1. detect whether damage exists\n2. identify visible damage types\n3. estimate damage severity\n4. identify affected vehicle parts\n5. assess vehicle drivability\n6. determine airbag deployment visibility\n7. identify possible fraud signals\n8. estimate confidence\n\nThe final output will be validated by a connected structured output schema parser.\n\n############################################################\n###################### ③ CONSTRAINTS #######################\n############################################################\n\n################ VISUAL ANALYSIS RULES ################\n\n- Use ONLY visible image evidence.\n- NEVER hallucinate image contents.\n- NEVER infer hidden structural damage.\n- NEVER fabricate affected parts.\n- NEVER assume airbag deployment if not visible.\n- NEVER fabricate fraud indicators.\n- Prefer conservative assessment when uncertain.\n\n################ DAMAGE SEVERITY RULES ################\n\nUse ONLY these severity values:\n- MINOR\n- MODERATE\n- SEVERE\n- TOTAL_LOSS\n\n################ FRAUD RULES ################\n\nPossible fraud signals must ONLY reflect observable inconsistencies visible in the image.\n\nNEVER:\n- accuse users of fraud\n- make legal conclusions\n- fabricate suspicious activity\n\n################ ESTIMATION RULES ################\n\nEstimated repair costs must remain rough visual estimates only.\n\nMaintain:\n- precision over recall\n- conservative assessment\n- deterministic behavior\n\n############################################################\n##################### ④ OUTPUT FORMAT #####################\n############################################################\n\nGenerate output strictly according to the connected structured output schema.\n\nIMPORTANT:\n- Do NOT create wrapper objects.\n- Do NOT wrap the response inside:\n  {\n    \"output\": { }\n  }\n\nThe structured parser already controls:\n- JSON formatting\n- schema validation\n- field typing\n- required fields\n\nYour responsibility is ONLY to generate accurate field values.\n\nDo not include headings in the generated output.\n\n############################################################\n################### ⑤ REASONING STYLE #####################\n############################################################\n\nBefore generating the final output, reason through these steps IN ORDER:\n\n1. Determine whether visible vehicle damage exists.\n2. Identify visible damage types.\n3. Identify affected vehicle parts.\n4. Estimate severity conservatively.\n5. Assess vehicle drivability.\n6. Determine whether airbags appear deployed.\n7. Identify possible fraud inconsistencies.\n8. Estimate confidence.\n\nReasoning priorities:\n- precision over recall\n- conservative assessment\n- determinism over creativity\n- safety over assumption\n\n############################################################\n######################## ⑥ FALLBACK ########################\n############################################################\n\nIf image quality is poor or unclear:\n- reduce confidence_score\n- prefer conservative assessments\n\nIf severity cannot be confidently estimated:\n- select the lower severity category conservatively\n\nIf vehicle parts are unclear:\n- return only confidently visible affected parts\n\nIf evidence is insufficient:\n- minimize speculative conclusions\n\nNEVER guess image contents.",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        608,
+        0
+      ],
+      "id": "1c9f0f52-3dd2-4a16-a599-3152faff4cdb",
+      "name": "Image_Damage_Analyser"
+    },
+    {
+      "parameters": {
+        "tableId": "insurance_media_analysis",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_id",
+              "fieldValue": "={{ $('Audit_Event_Logger_Trigger').item.json.document_id }}"
+            },
+            {
+              "fieldId": "internal_claim_id",
+              "fieldValue": "={{ $('Audit_Event_Logger_Trigger').item.json.internal_claim_id }}"
+            },
+            {
+              "fieldId": "claim_id",
+              "fieldValue": "={{ $('Audit_Event_Logger_Trigger').item.json.claim_id }}"
+            },
+            {
+              "fieldId": "media_type",
+              "fieldValue": "={{ $('Audit_Event_Logger_Trigger').item.json.mime_type }}"
+            },
+            {
+              "fieldId": "damage_detected",
+              "fieldValue": "={{ $json.output.damage_detected }}"
+            },
+            {
+              "fieldId": "damage_type",
+              "fieldValue": "={{ $json.output.damage_type }}"
+            },
+            {
+              "fieldId": "damage_severity",
+              "fieldValue": "={{ $json.output.damage_severity }}"
+            },
+            {
+              "fieldId": "confidence_score",
+              "fieldValue": "={{ $json.output.confidence_score }}"
+            },
+            {
+              "fieldId": "analysis_status",
+              "fieldValue": "COMPLETED"
+            },
+            {
+              "fieldId": "affected_parts",
+              "fieldValue": "={{ $json.output.affected_parts }}"
+            },
+            {
+              "fieldId": "vehicle_condition",
+              "fieldValue": "={{ $json.output.vehicle_condition }}"
+            },
+            {
+              "fieldId": "airbag_deployed",
+              "fieldValue": "={{ $json.output.airbag_deployed }}"
+            },
+            {
+              "fieldId": "estimated_visual_damage_usd",
+              "fieldValue": "={{ $json.output.estimated_visual_damage_usd }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        0
+      ],
+      "id": "7fef455a-b5f4-4153-888d-df24a3ff64b3",
+      "name": "Insert_Image_Analysis_Fields1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Audit_Event_Logger_Trigger": [
+      {
+        "json": {
+          "document_id": "bf36816f-d9b1-4f98-9c88-d601243296bf",
+          "internal_claim_id": "369fb9bf-11fd-4390-951d-325040370e02",
+          "claim_id": "VCL-2026-02261806",
+          "source_field": "Damage Photos",
+          "file_name": "BMW M6_2 damage.jpg",
+          "mime_type": "image/jpeg",
+          "file_extension": "jpg",
+          "file_size": "234 kB",
+          "storage_key": "claims/369fb9bf-11fd-4390-951d-325040370e02/Damage Photos/BMW M6_2 damage.jpg",
+          "storage_id": "a107f158-85fa-41f8-84b1-eb4e08c1935b",
+          "upload_status": "UPLOADED",
+          "moderation_status": "COMPLETE",
+          "ocr_status": "PENDING",
+          "ai_processing_status": "PENDING",
+          "uploaded_at": "2026-05-27T06:51:18.373865+00:00"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Audit_Event_Logger_Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download_image_after_security_check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4o mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image_Damage_Analyser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Image_Damage_Analyser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download_image_after_security_check": {
+      "main": [
+        [
+          {
+            "node": "Image_Damage_Analyser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image_Damage_Analyser": {
+      "main": [
+        [
+          {
+            "node": "Insert_Image_Analysis_Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7d681ed3-020f-4df1-b4e3-9380463cf684",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ae4e48d5a6f5787668e3e31e4ca61012ccc4f24961dcb8bd327df4dd298b05cc"
+  },
+  "nodeGroups": [],
+  "id": "gsuJ72gbMVDgil1Z",
+  "tags": []
+}

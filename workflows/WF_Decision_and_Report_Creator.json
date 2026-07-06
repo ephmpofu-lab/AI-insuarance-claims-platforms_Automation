@@ -1,0 +1,1156 @@
+{
+  "name": "WF_Decision_and_Report_Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Insuarance_claims",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "internal_claim_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.internal_claim_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        16
+      ],
+      "id": "63887dc1-1a00-4f9d-9872-5f386caf805c",
+      "name": "Get_Claims_Record1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://odqxdvauovdwnaxrashq.supabase.co/storage/v1/object/claims/{{ $('Get_Claims_Record1').first().json.internal_claim_id }}/reports/claim_assessment_report.pdf",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-upsert",
+              "value": "true"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/pdf"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1312,
+        16
+      ],
+      "id": "b3d1dd66-db94-40d9-85da-d191b0e94c5d",
+      "name": "uploads_PDF_Report_to_Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html_content": "={{ $json.html }}",
+        "output_format": "file",
+        "output_filename": "={{ $('When Executed by Another Workflow').item.json.internal_claim_id }}_claim_assessment_report"
+      },
+      "type": "n8n-nodes-htmlcsstopdf.htmlcsstopdf",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        16
+      ],
+      "id": "674e7c54-71d2-45bb-9b3b-58da0e7046bf",
+      "name": "Convert HTML to PDF",
+      "credentials": {
+        "htmlcsstopdfApi": {
+          "id": "F3zbU6yyGTdLuFeq",
+          "name": "HTML to PDF account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -992,
+        16
+      ],
+      "id": "76474735-2b67-428a-bbff-ba1e4c7cf487",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        256
+      ],
+      "id": "3c179511-f248-4135-a0da-4a0804bf22d4",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "ISCreQoZk3NWaiDs",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"required\": [\n    \"claim_id\",\n    \"claimant_name\",\n    \"policy_number\",\n    \"claim_type\",\n    \"vehicle_make\",\n    \"vehicle_model\",\n    \"vehicle_registration\",\n    \"vin_number\",\n    \"incident_date\",\n    \"incident_location\",\n    \"selected_decision\",\n    \"minimum_confidence_score\",\n    \"decision_reason\",\n    \"human_review_required\",\n    \"fraud_investigation_required\",\n    \"fraud_risk_level\",\n    \"policy_validation_status\",\n    \"coverage_eligibility\",\n    \"claim_consistency_score\",\n    \"damage_severity\",\n    \"estimated_damage_amount\",\n    \"vehicle_condition\",\n    \"claim_matches_documents\",\n    \"claim_matches_images\",\n    \"policy_matches_claimant\",\n    \"vin_match\",\n    \"repair_estimate_reasonable\",\n    \"policy_exclusion_triggered\",\n    \"triggered_exclusions\",\n    \"fraud_indicators\",\n    \"recommended_action\",\n    \"reason\",\n    \"executive_summary\"\n  ],\n  \"properties\": {\n    \"claim_id\": {\n      \"type\": \"string\"\n    },\n\n    \"claimant_name\": {\n      \"type\": \"string\"\n    },\n\n    \"policy_number\": {\n      \"type\": \"string\"\n    },\n\n    \"claim_type\": {\n      \"type\": \"string\"\n    },\n\n    \"vehicle_make\": {\n      \"type\": \"string\"\n    },\n\n    \"vehicle_model\": {\n      \"type\": \"string\"\n    },\n\n    \"vehicle_registration\": {\n      \"type\": \"string\"\n    },\n\n    \"vin_number\": {\n      \"type\": \"string\"\n    },\n\n    \"incident_date\": {\n      \"type\": \"string\"\n    },\n\n    \"incident_location\": {\n      \"type\": \"string\"\n    },\n\n    \"selected_decision\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"AUTO_APPROVAL\",\n        \"MANUAL_REVIEW\",\n        \"FRAUD_INVESTIGATION\",\n        \"REJECTION\"\n      ]\n    },\n\n    \"minimum_confidence_score\": {\n      \"type\": \"number\",\n      \"minimum\": 0,\n      \"maximum\": 1\n    },\n\n    \"decision_reason\": {\n      \"type\": \"string\"\n    },\n\n    \"human_review_required\": {\n      \"type\": \"boolean\"\n    },\n\n    \"fraud_investigation_required\": {\n      \"type\": \"boolean\"\n    },\n\n    \"fraud_risk_level\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"LOW\",\n        \"MEDIUM\",\n        \"HIGH\"\n      ]\n    },\n\n    \"policy_validation_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"VALID\",\n        \"INVALID\"\n      ]\n    },\n\n    \"coverage_eligibility\": {\n      \"type\": \"boolean\"\n    },\n\n    \"claim_consistency_score\": {\n      \"type\": \"number\",\n      \"minimum\": 0,\n      \"maximum\": 1\n    },\n\n    \"damage_severity\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"LOW\",\n        \"MODERATE\",\n        \"SEVERE\"\n      ]\n    },\n\n    \"estimated_damage_amount\": {\n      \"type\": \"number\",\n      \"minimum\": 0\n    },\n\n    \"vehicle_condition\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"DRIVABLE\",\n        \"NOT_DRIVABLE\"\n      ]\n    },\n\n    \"claim_matches_documents\": {\n      \"type\": \"boolean\"\n    },\n\n    \"claim_matches_images\": {\n      \"type\": \"boolean\"\n    },\n\n    \"policy_matches_claimant\": {\n      \"type\": \"boolean\"\n    },\n\n    \"vin_match\": {\n      \"type\": \"boolean\"\n    },\n\n    \"repair_estimate_reasonable\": {\n      \"type\": \"boolean\"\n    },\n\n    \"policy_exclusion_triggered\": {\n      \"type\": \"boolean\"\n    },\n\n    \"triggered_exclusions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n\n    \"fraud_indicators\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n\n    \"recommended_action\": {\n      \"type\": \"string\"\n    },\n\n    \"reason\": {\n      \"type\": \"string\"\n    },\n\n    \"executive_summary\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        256
+      ],
+      "id": "2c573631-dc7a-4d80-a540-7f9509363f16",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c689779-d0d8-4058-b09a-b797de453397",
+              "name": "internal_claim_id",
+              "value": "={{ $json.internal_claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "68b04a20-9580-4a68-a568-482405ee4dbe",
+              "name": "claim_id",
+              "value": "={{ $json.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d2ca5185-1029-4c86-b25f-607b7324a5f7",
+              "name": "claimant_name",
+              "value": "={{ $json.claimant_name }}",
+              "type": "string"
+            },
+            {
+              "id": "c08bbf74-dce7-469e-840b-0dcc029a7a3a",
+              "name": "claimant_email",
+              "value": "={{ $json.claimant_email }}",
+              "type": "string"
+            },
+            {
+              "id": "4ba33bc1-a148-4750-8c36-d10cf3916743",
+              "name": "claim_type",
+              "value": "={{ $json.claim_type }}",
+              "type": "string"
+            },
+            {
+              "id": "d3d16012-16cd-47ad-9ed4-1ecfdea9eb66",
+              "name": "claim_status",
+              "value": "={{ $json.claim_status }}",
+              "type": "string"
+            },
+            {
+              "id": "217afc81-f86f-49e7-ab3e-abaab27176c3",
+              "name": "claim_number",
+              "value": "={{ $json.claim_number }}",
+              "type": "string"
+            },
+            {
+              "id": "116fb708-ab8a-4619-97b4-e70e4f2370d0",
+              "name": "policy_number",
+              "value": "={{ $json.policy_number }}",
+              "type": "string"
+            },
+            {
+              "id": "0dd09ecc-14ba-4230-884e-66598da1cee1",
+              "name": "claimant_phone",
+              "value": "={{ $json.claimant_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "bac3e53f-48a5-4cf2-93b1-1198ec43d4e0",
+              "name": "vehicle_make",
+              "value": "={{ $json.vehicle_make }}",
+              "type": "string"
+            },
+            {
+              "id": "0fb09ad5-03e7-4008-935e-1b6006cca7e6",
+              "name": "vehicle_model",
+              "value": "={{ $json.vehicle_model }}",
+              "type": "string"
+            },
+            {
+              "id": "1b427256-e63f-4a55-8f7c-514ea64409b8",
+              "name": "licence_plate",
+              "value": "={{ $json.licence_plate }}",
+              "type": "string"
+            },
+            {
+              "id": "00041044-27c6-4fbf-8491-6de65af74edf",
+              "name": "vin",
+              "value": "={{ $json.vin }}",
+              "type": "string"
+            },
+            {
+              "id": "5919ec5e-ea80-4e32-9356-34089c6c1289",
+              "name": "incident_time",
+              "value": "={{ $json.incident_time }}",
+              "type": "string"
+            },
+            {
+              "id": "012c72bc-1faa-4e6d-abd3-a2a1c14dda49",
+              "name": "country",
+              "value": "={{ $json.country }}",
+              "type": "string"
+            },
+            {
+              "id": "b3df28e8-8600-47a9-8d74-cb612ad4a205",
+              "name": "city",
+              "value": "={{ $json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "0ec76f0e-ee39-4107-aecf-cb04271f4d8b",
+              "name": "description",
+              "value": "={{ $json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "7a2dc5bf-8781-42ec-a168-f3359249ef00",
+              "name": "estimated_damage_cost",
+              "value": "={{ $json.estimated_damage_cost }}",
+              "type": "number"
+            },
+            {
+              "id": "a62a25cc-f731-4e4d-8c56-ea086e733368",
+              "name": "document_id",
+              "value": "={{ $('When Executed by Another Workflow').item.json.document_id }}",
+              "type": "string"
+            },
+            {
+              "id": "2cd89593-618e-4dfd-a31c-3d415aa81d31",
+              "name": "damage_detected",
+              "value": "={{ $('When Executed by Another Workflow').item.json.damage_detected }}",
+              "type": "boolean"
+            },
+            {
+              "id": "c9f47730-b71c-4546-85b1-524f81e0eeca",
+              "name": "damage_type",
+              "value": "={{ $('When Executed by Another Workflow').item.json.damage_type }}",
+              "type": "array"
+            },
+            {
+              "id": "d35e36f9-410a-4996-a05e-545f56960f1c",
+              "name": "damage_severity",
+              "value": "={{ $('When Executed by Another Workflow').item.json.damage_severity }}",
+              "type": "string"
+            },
+            {
+              "id": "f07887a7-7433-4d72-a94e-4082824aae0c",
+              "name": "affected_parts",
+              "value": "={{ $('When Executed by Another Workflow').item.json.affected_parts }}",
+              "type": "array"
+            },
+            {
+              "id": "393a4765-4b6e-402a-a416-f0a1daf60ecc",
+              "name": "vehicle_condition",
+              "value": "={{ $('When Executed by Another Workflow').item.json.vehicle_condition }}",
+              "type": "string"
+            },
+            {
+              "id": "66406dbc-5077-459a-aa51-dcc3793e23cd",
+              "name": "airbag_deployed",
+              "value": "={{ $('When Executed by Another Workflow').item.json.airbag_deployed }}",
+              "type": "boolean"
+            },
+            {
+              "id": "aacb7668-e140-418c-940a-7c7b9825cdd7",
+              "name": "estimated_visual_damage_usd",
+              "value": "={{ $('When Executed by Another Workflow').item.json.estimated_visual_damage_usd }}",
+              "type": "number"
+            },
+            {
+              "id": "35c54b8c-3e48-492d-8aa7-5349d99b422c",
+              "name": "confidence_score",
+              "value": "={{ $('When Executed by Another Workflow').item.json.confidence_score }}",
+              "type": "string"
+            },
+            {
+              "id": "1382e5ba-448f-4fde-ad62-293dae8995d2",
+              "name": "analysis_id",
+              "value": "={{ $('When Executed by Another Workflow').item.json.analysis_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d5ffd4b4-27c0-49bf-9ad9-d202f42f3f38",
+              "name": "analysis_type",
+              "value": "={{ $('When Executed by Another Workflow').item.json.document_type }}",
+              "type": "string"
+            },
+            {
+              "id": "c51e39a9-b843-41f3-84b5-960452d29d63",
+              "name": "document_type",
+              "value": "={{ $('When Executed by Another Workflow').item.json.document_type }}",
+              "type": "string"
+            },
+            {
+              "id": "cd466670-3b01-476e-be76-f180de81bd6b",
+              "name": "vehicle_registration",
+              "value": "={{ $('When Executed by Another Workflow').item.json.vehicle_registration }}",
+              "type": "string"
+            },
+            {
+              "id": "847971e6-a74c-47a0-b106-6b0a11ff7a4c",
+              "name": "incident_location",
+              "value": "={{ $('When Executed by Another Workflow').item.json.incident_location }}",
+              "type": "string"
+            },
+            {
+              "id": "b559f615-cd46-49fe-ac43-1a36d62fc404",
+              "name": "repair_estimate_amount",
+              "value": "={{ $('When Executed by Another Workflow').item.json.repair_estimate_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "c5099b7d-d0f9-4144-aa71-60060dcc96b8",
+              "name": "document_summary",
+              "value": "={{ $('When Executed by Another Workflow').item.json.document_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "3da85921-751e-451b-8664-555a8cb66cc9",
+              "name": "vehicle_make",
+              "value": "={{ $('When Executed by Another Workflow').item.json.vehicle_make }}",
+              "type": "string"
+            },
+            {
+              "id": "56d397a0-f027-4d9a-a77f-e18b116bd94c",
+              "name": "vehicle_model",
+              "value": "={{ $('When Executed by Another Workflow').item.json.vehicle_model }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -672,
+        16
+      ],
+      "id": "d900a94b-f521-41d2-a68a-bea83db45fb3",
+      "name": "Normalize_And_Merge_Evidence"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "insurance_policy_products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "policy_type",
+              "keyValue": "={{ $json.policy_type }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "994cad33-ba5e-40de-8adf-477353fc8532",
+      "name": "insurance_policy_products",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "insurance_active_policies",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "policy_number",
+              "keyValue": "={{ $json.policy_number }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        16
+      ],
+      "id": "b21c0364-9553-4b37-b641-6e8c6555e48f",
+      "name": "insurance_active_policies",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "insurance_policy_rules",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "policy_type",
+              "keyValue": "={{ $json.policy_type }}"
+            },
+            {
+              "keyName": "claim_type",
+              "keyValue": "={{ $json.claim_type }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        16
+      ],
+      "id": "84e980dd-a576-4a31-a854-97f570565fd4",
+      "name": "insurance_policy_rules",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "insurance_policy_exclusions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "policy_type",
+              "keyValue": "={{ $json.policy_type }}"
+            },
+            {
+              "keyName": "claim_type",
+              "keyValue": "={{ $json.claim_type }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        48,
+        16
+      ],
+      "id": "4b7e3036-8bfb-44e3-9056-aead13cbf115",
+      "name": "insurance_policy_rules1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x3lnUN03tVXKRbrL",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const decision =\n$('Decison_Assistance').first().json.output || {};\n\nconst narrative =\n$('Report_Generation_LLM').first().json.output || {};\n\nreturn [\n{\njson: {\n\nhtml: `\n\n<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n\n<style>\n\nbody{\nfont-family: Arial, sans-serif;\nbackground:#f4f6f9;\npadding:40px;\ncolor:#1f2937;\n}\n\n.container{\nmax-width:1200px;\nmargin:auto;\nbackground:white;\npadding:40px;\nborder-radius:12px;\nbox-shadow:0 4px 20px rgba(0,0,0,0.08);\n}\n\n.header{\nborder-bottom:3px solid #1e3a8a;\npadding-bottom:20px;\nmargin-bottom:30px;\n}\n\n.title{\nfont-size:32px;\nfont-weight:bold;\ncolor:#1e3a8a;\n}\n\n.subtitle{\nfont-size:14px;\ncolor:#6b7280;\nmargin-top:6px;\n}\n\n.section{\nmargin-top:30px;\n}\n\n.section-header{\nfont-size:20px;\nfont-weight:bold;\nmargin-bottom:15px;\npadding-bottom:8px;\nborder-bottom:2px solid #e5e7eb;\ncolor:#111827;\n}\n\n.section-body{\nfont-size:15px;\nline-height:1.7;\ncolor:#374151;\n}\n\n.metrics{\ndisplay:grid;\ngrid-template-columns:repeat(4,1fr);\ngap:20px;\nmargin-top:20px;\n}\n\n.metric-card{\nbackground:#f9fafb;\npadding:20px;\nborder-radius:10px;\ntext-align:center;\nborder:1px solid #e5e7eb;\n}\n\n.metric-card h2{\nmargin:0;\nfont-size:26px;\ncolor:#111827;\n}\n\n.metric-card p{\nmargin-top:8px;\nfont-size:13px;\ncolor:#6b7280;\n}\n\ntable{\nwidth:100%;\nborder-collapse:collapse;\nmargin-top:15px;\n}\n\ntable th{\nbackground:#1e3a8a;\ncolor:white;\npadding:12px;\ntext-align:left;\nfont-size:14px;\n}\n\ntable td{\npadding:12px;\nborder:1px solid #e5e7eb;\nfont-size:14px;\n}\n\n.summary-box{\nbackground:#eff6ff;\npadding:20px;\nborder-left:5px solid #2563eb;\nborder-radius:8px;\nline-height:1.7;\n}\n\n.badge{\ndisplay:inline-block;\npadding:6px 12px;\nborder-radius:999px;\nfont-size:12px;\nfont-weight:bold;\n}\n\n.approved{\nbackground:#dcfce7;\ncolor:#166534;\n}\n\n.review{\nbackground:#fef3c7;\ncolor:#92400e;\n}\n\n.fraud{\nbackground:#fee2e2;\ncolor:#991b1b;\n}\n\n.footer{\nmargin-top:50px;\nfont-size:12px;\ncolor:#9ca3af;\ntext-align:center;\n}\n\n</style>\n</head>\n\n<body>\n\n<div class=\"container\">\n\n<div class=\"header\">\n<div class=\"title\">\nEnterprise Insurance Claim Assessment Report\n</div>\n\n<div class=\"subtitle\">\nAI Adjudication & Risk Intelligence Report\n</div>\n</div>\n\n<div class=\"section\">\n\n<div class=\"section-header\">\nClaim Information\n</div>\n\n<table>\n\n<tr>\n<th>Field</th>\n<th>Value</th>\n</tr>\n\n<tr>\n<td>Claim ID</td>\n<td>${decision.claim_id || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Claimant Name</td>\n<td>${decision.claimant_name || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Policy Number</td>\n<td>${decision.policy_number || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Claim Type</td>\n<td>${decision.claim_type || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Vehicle Make</td>\n<td>${decision.vehicle_make || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Vehicle Model</td>\n<td>${decision.vehicle_model || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Vehicle Registration</td>\n<td>${decision.vehicle_registration || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>VIN Number</td>\n<td>${decision.vin_number || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Incident Date</td>\n<td>${decision.incident_date || 'N/A'}</td>\n</tr>\n\n<tr>\n<td>Incident Location</td>\n<td>${decision.incident_location || 'N/A'}</td>\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"section\">\n\n<div class=\"section-header\">\nExecutive Summary\n</div>\n\n<div class=\"section-body\">\n\n<div class=\"summary-box\">\n${narrative.executive_summary || decision.executive_summary || 'No executive summary available.'}\n</div>\n\n</div>\n\n</div>\n\n<div class=\"metrics\">\n\n<div class=\"metric-card\">\n<h2>${decision.decision_confidence ?? 'N/A'}</h2>\n<p>Decision Confidence</p>\n</div>\n\n<div class=\"metric-card\">\n<h2>${decision.claim_consistency_score ?? 'N/A'}</h2>\n<p>Claim Consistency Score</p>\n</div>\n\n<div class=\"metric-card\">\n<h2>€${decision.estimated_damage_amount ?? 'N/A'}</h2>\n<p>Estimated Damage Amount</p>\n</div>\n\n<div class=\"metric-card\">\n<h2>${decision.damage_severity || 'N/A'}</h2>\n<p>Damage Severity</p>\n</div>\n\n</div>\n\n<div class=\"section\">\n\n<div class=\"section-header\">\nAI Adjudication Decision\n</div>\n\n<div class=\"section-body\">\n\n<p>\n\n<strong>Decision:</strong>\n\n<span class=\"badge ${\ndecision.selected_decision === 'AUTO_APPROVAL'\n? 'approved'\n: decision.selected_decision === 'HUMAN_REVIEW'\n? 'review'\n: 'fraud'\n}\">\n${decision.selected_decision || 'N/A'}\n</span>\n\n</p>\n\n<p>\n<strong>Decision Reason:</strong>\n${decision.decision_reason || 'N/A'}\n</p>\n\n<p>\n<strong>Recommended Action:</strong>\n${decision.recommended_action || 'N/A'}\n</p>\n\n</div>\n\n</div>\n\n<div class=\"section\">\n\n<div class=\"section-header\">\nNarrative Findings\n</div>\n\n<div class=\"section-body\">\n\n<p><strong>Claim Overview:</strong><br>\n${narrative.claim_overview || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Policy Validation Findings:</strong><br>\n${narrative.policy_validation_findings || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Document Analysis Findings:</strong><br>\n${narrative.document_analysis_findings || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Image Damage Analysis:</strong><br>\n${narrative.image_damage_analysis || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Fraud Risk Assessment:</strong><br>\n${narrative.fraud_risk_assessment || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Cross Validation Findings:</strong><br>\n${narrative.cross_validation_findings || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Decision Explanation:</strong><br>\n${narrative.decision_explanation || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Recommended Next Actions:</strong><br>\n${narrative.recommended_next_actions || 'N/A'}\n</p>\n\n<br>\n\n<p><strong>Operational Review Notes:</strong><br>\n${narrative.operational_review_notes || 'N/A'}\n</p>\n\n</div>\n\n</div>\n\n<div class=\"footer\">\nGenerated by Enterprise Insurance AI Adjudication Platform\n</div>\n\n</div>\n\n</body>\n</html>\n\n`\n\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        16
+      ],
+      "id": "20aefbc2-e2f2-42c0-b086-ef9bf8156b8c",
+      "name": "Report_Template_Code"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        240
+      ],
+      "id": "15c44c8b-d2f1-4b82-b0d0-5c5161bd2047",
+      "name": "OpenAI Chat Model5",
+      "credentials": {
+        "openAiApi": {
+          "id": "ISCreQoZk3NWaiDs",
+          "name": "OpenAI account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"required\": [\n    \"claim_id\",\n    \"claim_number\",\n    \"claimant_name\",\n    \"policy_number\",\n    \"claim_type\",\n    \"vehicle_make\",\n    \"vehicle_model\",\n    \"vehicle_registration\",\n    \"vin_number\",\n    \"incident_date\",\n    \"incident_location\",\n    \"selected_decision\",\n    \"decision_confidence\",\n    \"fraud_risk_level\",\n    \"policy_validation_status\",\n    \"coverage_eligibility\",\n    \"human_review_required\",\n    \"fraud_investigation_required\",\n    \"damage_severity\",\n    \"estimated_damage_amount\",\n    \"vehicle_condition\",\n    \"claim_matches_documents\",\n    \"claim_matches_images\",\n    \"vin_match\",\n    \"policy_exclusion_triggered\",\n    \"fraud_indicators\",\n    \"executive_summary\",\n    \"claim_overview\",\n    \"policy_validation_findings\",\n    \"document_analysis_findings\",\n    \"image_damage_analysis\",\n    \"fraud_risk_assessment\",\n    \"cross_validation_findings\",\n    \"decision_explanation\",\n    \"recommended_next_actions\",\n    \"operational_review_notes\"\n  ],\n  \"properties\": {\n    \"claim_id\": {\n      \"type\": \"string\"\n    },\n\n    \"claim_number\": {\n      \"type\": \"string\"\n    },\n\n    \"claimant_name\": {\n      \"type\": \"string\"\n    },\n\n    \"policy_number\": {\n      \"type\": \"string\"\n    },\n\n    \"claim_type\": {\n      \"type\": \"string\"\n    },\n\n    \"vehicle_make\": {\n      \"type\": \"string\"\n    },\n\n    \"vehicle_model\": {\n      \"type\": \"string\"\n    },\n\n    \"vehicle_registration\": {\n      \"type\": \"string\"\n    },\n\n    \"vin_number\": {\n      \"type\": \"string\"\n    },\n\n    \"incident_date\": {\n      \"type\": \"string\"\n    },\n\n    \"incident_location\": {\n      \"type\": \"string\"\n    },\n\n    \"selected_decision\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"AUTO_APPROVAL\",\n        \"MANUAL_REVIEW\",\n        \"FRAUD_INVESTIGATION\",\n        \"REJECTION\"\n      ]\n    },\n\n    \"decision_confidence\": {\n      \"type\": \"number\",\n      \"minimum\": 0,\n      \"maximum\": 1\n    },\n\n    \"fraud_risk_level\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"LOW\",\n        \"MEDIUM\",\n        \"HIGH\"\n      ]\n    },\n\n    \"policy_validation_status\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"VALID\",\n        \"INVALID\"\n      ]\n    },\n\n    \"coverage_eligibility\": {\n      \"type\": \"boolean\"\n    },\n\n    \"human_review_required\": {\n      \"type\": \"boolean\"\n    },\n\n    \"fraud_investigation_required\": {\n      \"type\": \"boolean\"\n    },\n\n    \"damage_severity\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"LOW\",\n        \"MODERATE\",\n        \"SEVERE\"\n      ]\n    },\n\n    \"estimated_damage_amount\": {\n      \"type\": \"number\",\n      \"minimum\": 0\n    },\n\n    \"vehicle_condition\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"DRIVABLE\",\n        \"NOT_DRIVABLE\"\n      ]\n    },\n\n    \"claim_matches_documents\": {\n      \"type\": \"boolean\"\n    },\n\n    \"claim_matches_images\": {\n      \"type\": \"boolean\"\n    },\n\n    \"vin_match\": {\n      \"type\": \"boolean\"\n    },\n\n    \"policy_exclusion_triggered\": {\n      \"type\": \"boolean\"\n    },\n\n    \"fraud_indicators\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n\n    \"executive_summary\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"claim_overview\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"policy_validation_findings\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"document_analysis_findings\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"image_damage_analysis\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"fraud_risk_assessment\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"cross_validation_findings\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"decision_explanation\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"recommended_next_actions\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    },\n\n    \"operational_review_notes\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ]\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        240
+      ],
+      "id": "f42f7584-2c56-4a71-b8ea-dd4b31de217c",
+      "name": "Structured Output Parser3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=############################################################\n########################## PART 1 ##########################\n########################### TASK ###########################\n############################################################\n\nAnalyze the provided insurance adjudication evidence and populate the connected structured output schema accurately.\n\nPrioritize:\n- deterministic adjudication\n- conservative fraud assessment\n- precision over recall\n\n############################################################\n########################## PART 2 ##########################\n##################### CONTEXT INJECTION ####################\n############################################################\n\nCLAIM SUBMISSION RECORD:\n{{ JSON.stringify($('Get_Claims_Record1').item.json, null, 2) }}\n\nDOCUMENT + IMAGE ANALYSIS RECORD:\n{{ JSON.stringify($('When Executed by Another Workflow').item.json, null, 2) }}\n\nACTIVE POLICY RECORD:\n{{ JSON.stringify($('Normalise_Decison_LLM_Inputs').item.json, null, 2) }}\n\n############################################################\n########################## PART 3 ##########################\n#################### VALIDATION CONTEXT ####################\n############################################################\n\nVALIDATION REQUIREMENTS:\n\nCompare ONLY:\n- claimant_name\n- policy_number\n- vehicle_registration\n- vin\n- vehicle_make\n- vehicle_model\n\nRULES:\n\n- Matching values reduce fraud risk.\n- Mismatches increase fraud risk.\n- Multiple mismatches increase fraud severity.\n- Invalid policy status prevents AUTO_APPROVAL.\n- Policy exclusions increase fraud risk.\n- Large repair estimate deviations require MANUAL_REVIEW.\n- High fraud risk requires FRAUD_INVESTIGATION.\n\nENUM RULES:\n\nselected_decision:\n- AUTO_APPROVAL\n- MANUAL_REVIEW\n- FRAUD_INVESTIGATION\n- REJECTION\n\nfraud_risk_level:\n- LOW\n- MEDIUM\n- HIGH\n\npolicy_validation_status:\n- VALID\n- INVALID\n\nvehicle_condition:\n- DRIVABLE\n- NOT_DRIVABLE\n\ndamage_severity:\n- LOW\n- MODERATE\n- SEVERE\n\nOUTPUT RULES:\n\n- Keep decision_reason short.\n- Keep executive_summary under 25 words.\n- Do not explain mismatches in detail.\n\n############################################################\n########################## PART 4 ##########################\n###################### OUTPUT REMINDER #####################\n############################################################\n\nGenerate output strictly according to the connected structured output schema.\n\nIMPORTANT:\n- Do not create wrapper objects.\n- Do not wrap the response inside:\n  {\n    \"output\": { }\n  }\n\nUse ONLY provided evidence and records.\n\nNever guess missing evidence.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=############################################################\n########################## ① ROLE ##########################\n############################################################\n\nYou are an enterprise insurance adjudication AI specialized in automated claim validation, fraud risk assessment, and insurance decision orchestration.\n\nYou operate inside an automated insurance claims workflow where outputs are consumed directly by:\n\n- structured parsers\n- fraud investigation systems\n- adjudication workflows\n- compliance systems\n- downstream AI agents\n- audit pipelines\n\nYour outputs must be:\n- deterministic\n- schema-compliant\n- machine-consumable\n- audit-safe\n\nYou are optimized for:\n- structured claims validation\n- fraud risk scoring\n- policy eligibility assessment\n- adjudication consistency analysis\n- low hallucination behavior\n\nBe concise.\nDo NOT use conversational language.\nDo NOT explain reasoning outside the generated output.\n\n############################################################\n######################## ② CONTEXT #########################\n############################################################\n\nYou will receive:\n\n1. claim submission records\n2. OCR/document analysis results\n3. image analysis results\n4. active policy records\n\nYour responsibilities are to:\n\n1. validate policy status\n2. validate coverage eligibility\n3. validate policy compatibility\n4. compare claim data against OCR evidence\n5. compare claim data against image analysis\n6. detect inconsistencies\n7. detect policy exclusion violations\n8. determine fraud risk level\n9. determine whether human review is required\n10. determine whether fraud escalation is required\n11. evaluate repair estimate reasonability\n12. determine final adjudication decision\n13. generate an executive summary\n\nThe final output will be validated by a connected structured output schema parser.\n\n############################################################\n###################### ③ CONSTRAINTS #######################\n############################################################\n\n################ VALIDATION RULES ################\n\nCompare ONLY these fields between the claim submission record and the document/image analysis records:\n\n- claimant_name\n- policy_number\n- vehicle_registration\n- vin\n- vehicle_make\n- vehicle_model\n\n################ FRAUD RULES ################\n\n- Matching values reduce fraud risk.\n- Mismatched values increase fraud risk.\n- Multiple mismatches increase fraud severity.\n- Policy exclusions increase fraud risk.\n- Invalid policies prevent AUTO_APPROVAL.\n- High fraud risk requires FRAUD_INVESTIGATION.\n- Large repair estimate deviations require MANUAL_REVIEW.\n\n################ DECISION RULES ################\n\nselected_decision must ONLY be:\n- AUTO_APPROVAL\n- MANUAL_REVIEW\n- FRAUD_INVESTIGATION\n- REJECTION\n\nfraud_risk_level must ONLY be:\n- LOW\n- MEDIUM\n- HIGH\n\npolicy_validation_status must ONLY be:\n- VALID\n- INVALID\n\ndamage_severity must ONLY be:\n- LOW\n- MODERATE\n- SEVERE\n\nvehicle_condition must ONLY be:\n- DRIVABLE\n- NOT_DRIVABLE\n\n################ SAFETY RULES ################\n\n- NEVER hallucinate evidence.\n- NEVER invent mismatches.\n- NEVER fabricate fraud indicators.\n- NEVER generate unsupported conclusions.\n- Use ONLY provided records and evidence.\n- Prefer conservative adjudication when uncertain.\n\n############################################################\n##################### ④ OUTPUT FORMAT #####################\n############################################################\n\nGenerate output strictly according to the connected structured output schema.\n\nIMPORTANT:\n- Do NOT create wrapper objects.\n- Do NOT wrap the response inside:\n  {\n    \"output\": { }\n  }\n\nThe structured parser already controls:\n- JSON formatting\n- schema validation\n- field typing\n- required fields\n\nYour responsibility is ONLY to generate accurate field values.\n\nDo not include headings in the generated output.\n\n############################################################\n################### ⑤ REASONING STYLE #####################\n############################################################\n\nBefore generating the final output, reason through these steps IN ORDER:\n\n1. Validate policy status.\n2. Validate coverage eligibility.\n3. Compare claim data against OCR evidence.\n4. Compare claim data against image analysis.\n5. Detect inconsistencies.\n6. Assess fraud risk conservatively.\n7. Evaluate repair estimate reasonability.\n8. Determine whether human review is required.\n9. Determine whether fraud escalation is required.\n10. Select the final adjudication decision.\n11. Generate executive summary.\n\nReasoning priorities:\n- determinism over creativity\n- precision over recall\n- conservative fraud assessment\n- safety over assumption\n\n############################################################\n######################## ⑥ FALLBACK ########################\n############################################################\n\nIf evidence is inconsistent:\n- increase fraud risk conservatively\n\nIf policy validation is uncertain:\n- avoid AUTO_APPROVAL\n\nIf evidence is incomplete:\n- prefer MANUAL_REVIEW\n\nIf fraud indicators are unclear:\n- avoid FRAUD_INVESTIGATION unless strongly supported\n\nNEVER guess missing evidence."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        432,
+        16
+      ],
+      "id": "bfdac950-ed91-48ab-aee1-ae6f90006537",
+      "name": "Decison_Assistance"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=############################################################\n########################## PART 1 ##########################\n########################### TASK ###########################\n############################################################\n\nGenerate professional enterprise insurance assessment narratives using the provided adjudication results.\n\nPrioritize:\n- operational clarity\n- narrative consistency\n- concise professional language\n\n############################################################\n########################## PART 2 ##########################\n##################### CONTEXT INJECTION ####################\n############################################################\n\nADJUDICATION RESULTS:\n{{ JSON.stringify($('Decison_Assistance').item.json.output, null, 2) }}\n\n############################################################\n########################## PART 3 ##########################\n#################### NARRATIVE CONTEXT #####################\n############################################################\n\nGenerate narratives for ALL required fields:\n\n- executive_summary\n- claim_overview\n- policy_validation_findings\n- document_analysis_findings\n- image_damage_analysis\n- fraud_risk_assessment\n- cross_validation_findings\n- decision_explanation\n- recommended_next_actions\n- operational_review_notes\n\nRULES:\n\n- Every required field must be returned.\n- Use ONLY supplied adjudication evidence.\n- Do not hallucinate evidence.\n- Do not contradict adjudication outputs.\n- Use concise professional insurance language.\n- Keep findings operational and audit-safe.\n- Keep executive_summary concise.\n- Use null only if evidence is unavailable.\n\nNarratives must align with:\n- selected_decision\n- fraud_risk_level\n- policy_validation_status\n- coverage_eligibility\n- triggered_exclusions\n- fraud_indicators\n- damage_severity\n- vehicle_condition\n\n############################################################\n########################## PART 4 ##########################\n###################### OUTPUT REMINDER #####################\n############################################################\n\nGenerate output strictly according to the connected structured output schema.\n\nIMPORTANT:\n- Do not create wrapper objects.\n- Do not wrap the response inside:\n  {\n    \"output\": { }\n  }\n\nNever generate unsupported findings.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=############################################################\n########################## ① ROLE ##########################\n############################################################\n\nYou are an enterprise insurance narrative generation AI specialized in operational insurance reporting and adjudication narrative synthesis.\n\nYou operate inside an automated insurance workflow where outputs are consumed directly by:\n\n- claims operations teams\n- fraud review systems\n- compliance workflows\n- audit systems\n- executive reporting pipelines\n- downstream AI agents\n\nYour outputs must be:\n- deterministic\n- concise\n- audit-safe\n- regulator-safe\n- operationally useful\n- schema-compliant\n\nYou are optimized for:\n- insurance assessment narratives\n- adjudication summaries\n- fraud risk summaries\n- policy validation reporting\n- evidence-based operational findings\n\nBe concise.\nDo NOT use conversational language.\nDo NOT explain reasoning outside the generated output.\n\n############################################################\n######################## ② CONTEXT #########################\n############################################################\n\nYou will receive structured adjudication outputs containing:\n\n- claim validation results\n- policy validation findings\n- OCR/document analysis\n- image analysis findings\n- fraud indicators\n- exclusion analysis\n- risk assessments\n- adjudication decisions\n\nYour responsibilities are to generate concise professional narratives for:\n\n- executive summaries\n- claim overviews\n- policy validation findings\n- document analysis findings\n- image damage analysis\n- fraud risk assessment\n- cross-validation findings\n- decision explanations\n- recommended next actions\n- operational review notes\n\nThe final output will be validated by a connected structured output schema parser.\n\n############################################################\n###################### ③ CONSTRAINTS #######################\n############################################################\n\n################ EVIDENCE RULES ################\n\n- Use ONLY supplied adjudication evidence.\n- NEVER hallucinate evidence.\n- NEVER invent findings.\n- NEVER contradict adjudication outputs.\n- NEVER fabricate fraud indicators.\n- Use null only when evidence is unavailable.\n\n################ ALIGNMENT RULES ################\n\nNarratives must align with:\n- selected_decision\n- fraud_risk_level\n- policy_validation_status\n- coverage_eligibility\n- human_review_required\n- fraud_investigation_required\n- fraud_indicators\n- triggered_exclusions\n- damage_severity\n- vehicle_condition\n- claim_matches_documents\n- claim_matches_images\n- vin_match\n\n################ STYLE RULES ################\n\nUse:\n- concise operational language\n- enterprise insurance terminology\n- audit-safe wording\n- regulator-safe findings\n\nAvoid:\n- conversational language\n- speculation\n- repetition\n- unnecessary detail\n- exaggerated language\n\n############################################################\n##################### ④ OUTPUT FORMAT #####################\n############################################################\n\nGenerate output strictly according to the connected structured output schema.\n\nIMPORTANT:\n- Do NOT create wrapper objects.\n- Do NOT wrap the response inside:\n  {\n    \"output\": { }\n  }\n\nThe structured parser already controls:\n- JSON formatting\n- schema validation\n- field typing\n- required fields\n\nYour responsibility is ONLY to generate accurate narrative values.\n\nDo not include headings in the generated output.\n\n############################################################\n################### ⑤ REASONING STYLE #####################\n############################################################\n\nBefore generating the final output, reason through these steps IN ORDER:\n\n1. Review adjudication outputs.\n2. Identify key operational findings.\n3. Align narratives with adjudication decisions.\n4. Align narratives with fraud assessments.\n5. Align narratives with policy validation results.\n6. Generate concise audit-safe summaries.\n7. Ensure consistency across all narrative fields.\n\nReasoning priorities:\n- consistency over creativity\n- precision over verbosity\n- operational clarity over detail\n- evidence over speculation\n\n############################################################\n######################## ⑥ FALLBACK ########################\n############################################################\n\nIf evidence is incomplete:\n- use concise neutral language\n- avoid speculative conclusions\n\nIf findings are uncertain:\n- reflect operational uncertainty conservatively\n\nIf evidence is unavailable:\n- return null\n\nNEVER generate unsupported operational conclusions."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        720,
+        16
+      ],
+      "id": "4d9768d8-4606-451f-835c-a9512cabd549",
+      "name": "Report_Generation_LLM"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "691a6c4e-3ea5-4086-a93d-463352e68193",
+              "name": "exclusion_code",
+              "value": "={{ $json.exclusion_code }}",
+              "type": "string"
+            },
+            {
+              "id": "9a9d18bb-2039-46b6-aaa9-c3fbfaef5d35",
+              "name": "exclusion_name",
+              "value": "={{ $json.exclusion_name }}",
+              "type": "string"
+            },
+            {
+              "id": "945fd733-32f8-47d6-8f42-3bd78e5859d6",
+              "name": "exclusion_description",
+              "value": "={{ $json.exclusion_description }}",
+              "type": "string"
+            },
+            {
+              "id": "47fdfb72-1b4b-4fd7-bd2d-ef14cf18bf9c",
+              "name": "exclusion_severity",
+              "value": "={{ $json.exclusion_severity }}",
+              "type": "string"
+            },
+            {
+              "id": "e565998f-43a2-4fce-bf91-e4b937e6d318",
+              "name": "policy_type",
+              "value": "={{ $('insurance_policy_rules').item.json.policy_type }}",
+              "type": "string"
+            },
+            {
+              "id": "cd5b74f1-7e9e-41e0-9ded-dea17f8d6187",
+              "name": "minimum_confidence_score",
+              "value": "={{ $('insurance_policy_rules').item.json.minimum_confidence_score }}",
+              "type": "number"
+            },
+            {
+              "id": "e30a7df2-fe01-430e-b7a2-b7433c13ecfe",
+              "name": "max_auto_approval_amount",
+              "value": "={{ $('insurance_policy_rules').item.json.max_auto_approval_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "a54918e1-0643-4921-9c85-dfc613fbe7b8",
+              "name": "fraud_threshold",
+              "value": "={{ $('insurance_policy_rules').item.json.fraud_threshold }}",
+              "type": "number"
+            },
+            {
+              "id": "7a2ae848-acb4-432b-aaf0-e2f0444179a7",
+              "name": "allowed_damage_severity",
+              "value": "={{ $('insurance_policy_rules').item.json.allowed_damage_severity }}",
+              "type": "string"
+            },
+            {
+              "id": "b8c83432-7747-4602-878d-cb2d0865a639",
+              "name": "payout_percentage",
+              "value": "={{ $('insurance_policy_rules').item.json.payout_percentage }}",
+              "type": "number"
+            },
+            {
+              "id": "9592787e-a68e-42b3-b818-c73f87691be0",
+              "name": "description",
+              "value": "={{ $('insurance_policy_products').item.json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "a28fe69d-aea7-480a-958e-412c6f88e37b",
+              "name": "max_claim_limit",
+              "value": "={{ $('insurance_policy_products').item.json.max_claim_limit }}",
+              "type": "number"
+            },
+            {
+              "id": "b0a4e56f-8119-4f34-93a5-1643a96bfaef",
+              "name": "deductible_amount",
+              "value": "={{ $('insurance_policy_products').item.json.deductible_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "81975f79-3ae8-4e7a-b30c-f03b29bd2d9a",
+              "name": "collision_coverage",
+              "value": "={{ $('insurance_policy_products').item.json.collision_coverage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "e98577b1-4e57-41ab-b8cc-d3fbcffcef78",
+              "name": "theft_coverage",
+              "value": "={{ $('insurance_policy_products').item.json.theft_coverage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "bf67694c-ca44-4e6d-a66e-9e7a8dba49fe",
+              "name": "fire_coverage",
+              "value": "={{ $('insurance_policy_products').item.json.fire_coverage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "b21ca9d8-a4db-4a14-b11a-42ca978705ea",
+              "name": "flood_coverage",
+              "value": "={{ $('insurance_policy_products').item.json.flood_coverage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "ef12dc29-55bc-4ed7-b29c-2288811e2f20",
+              "name": "roadside_assistance",
+              "value": "={{ $('insurance_policy_products').item.json.roadside_assistance }}",
+              "type": "boolean"
+            },
+            {
+              "id": "9e8f8aa9-8300-4fce-bdce-306a5d4d184b",
+              "name": "windshield_coverage",
+              "value": "={{ $('insurance_policy_products').item.json.windshield_coverage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "ab9b929e-5fc7-49b8-87a1-700b868d64ed",
+              "name": "personal_injury_coverage",
+              "value": "={{ $('insurance_policy_products').item.json.personal_injury_coverage }}",
+              "type": "boolean"
+            },
+            {
+              "id": "466a589d-1fc4-4e41-a99e-636ff13778f1",
+              "name": "requires_police_report",
+              "value": "={{ $('insurance_policy_products').item.json.requires_police_report }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        16
+      ],
+      "id": "4b62f7b9-8844-4ad3-ba4b-a75a5cc58dc8",
+      "name": "Normalise_Decison_LLM_Inputs"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "86d023aa-9897-4ab5-abff-9dd80d759fd3",
+              "name": "Key",
+              "value": "={{ $json.Key }}",
+              "type": "string"
+            },
+            {
+              "id": "f356371b-5bbe-4a51-9647-e69e85878a0d",
+              "name": "Id",
+              "value": "={{ $json.Id }}",
+              "type": "string"
+            },
+            {
+              "id": "3a393fa5-6978-42a7-a2a4-cb02f14c3ef3",
+              "name": "claim_type",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.claim_type }}",
+              "type": "string"
+            },
+            {
+              "id": "9f8e1f22-3bb4-4909-8fd1-e1cdf2a915e4",
+              "name": "generated_by",
+              "value": "AI_ENGINE",
+              "type": "string"
+            },
+            {
+              "id": "ff07dead-0e6a-4392-8029-aa20e8d79a38",
+              "name": "internal_claim_id",
+              "value": "={{ $('When Executed by Another Workflow').item.json.internal_claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "87b3d009-b6e0-43bc-9fb8-cdc85402c07c",
+              "name": "claim_id",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.claim_id }}",
+              "type": "string"
+            },
+            {
+              "id": "da561aca-5bed-4d8a-ac29-665656ae7fbf",
+              "name": "selected_decision",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.selected_decision }}",
+              "type": "string"
+            },
+            {
+              "id": "91b176d3-46b7-4eba-bca0-412d95c70b84",
+              "name": "decision_confidence",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.decision_confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "7d3ef798-ff84-4792-a965-296baad4eecb",
+              "name": "fraud_risk_level",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.fraud_risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "72971f42-7a61-4ef1-83f9-b3e0705970cc",
+              "name": "policy_validation_status",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.policy_validation_status }}",
+              "type": "string"
+            },
+            {
+              "id": "f0b555d4-82dd-4987-9f29-4c2e41f83dc5",
+              "name": "coverage_eligibility",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.coverage_eligibility }}",
+              "type": "boolean"
+            },
+            {
+              "id": "795b87a1-7014-4cda-a720-942a8e5c5d90",
+              "name": "human_review_required",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.human_review_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "a5144758-1d90-43c6-9960-b2d9b8795c4c",
+              "name": "fraud_investigation_required",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.fraud_investigation_required }}",
+              "type": "boolean"
+            },
+            {
+              "id": "1cd410d0-dec6-4e3c-b802-65d7bb4e790e",
+              "name": "fraud_indicators",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.fraud_indicators }}",
+              "type": "array"
+            },
+            {
+              "id": "3c73d57d-d23a-4392-8e80-8ab7176b03eb",
+              "name": "executive_summary",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.executive_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "e9d4e32f-7715-415a-be23-65b42ea4f715",
+              "name": "claim_overview",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.claim_overview }}",
+              "type": "string"
+            },
+            {
+              "id": "bee500e7-e79e-42a7-bfdd-dcd75fbc4d2e",
+              "name": "policy_validation_findings",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.policy_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "f8b78bcf-2e07-491a-b6b1-5996a6820550",
+              "name": "document_analysis_findings",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.document_analysis_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "1a6ee2bd-f0d7-48ca-938a-a0a95e2a1ff8",
+              "name": "fraud_risk_assessment",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.fraud_risk_assessment }}",
+              "type": "string"
+            },
+            {
+              "id": "6ed8dc6b-14cc-4d1d-a81c-366d05898fac",
+              "name": "cross_validation_findings",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.cross_validation_findings }}",
+              "type": "string"
+            },
+            {
+              "id": "90a2e902-e851-4c96-97d2-407af81a2385",
+              "name": "decision_explanation",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.decision_explanation }}",
+              "type": "string"
+            },
+            {
+              "id": "4ba0bf89-c3bf-4e7f-afed-2e4526c94b7a",
+              "name": "recommended_next_actions",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.recommended_next_actions }}",
+              "type": "string"
+            },
+            {
+              "id": "d4528075-d090-4843-bcd3-40fb53b6f214",
+              "name": "operational_review_notes",
+              "value": "={{ $('Report_Generation_LLM').item.json.output.operational_review_notes }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        16
+      ],
+      "id": "f159d278-419b-459e-a730-4cadb4dfd9da",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "media_analysis_id": "ed8a5741-1661-4ced-86f4-0d22cfe0af3b",
+          "document_id": "57e54d65-ac51-4ffb-b4fa-3abd5b01e6bb",
+          "internal_claim_id": "369fb9bf-11fd-4390-951d-325040370e02",
+          "claim_id": "VCL-2026-02261806",
+          "media_type": "image/jpeg",
+          "damage_detected": true,
+          "damage_type": [
+            "collision",
+            "structural"
+          ],
+          "damage_severity": "SEVERE",
+          "affected_parts": [
+            "front bumper",
+            "hood",
+            "front left fender",
+            "front left headlight"
+          ],
+          "vehicle_condition": "LIMITED_DRIVABILITY",
+          "airbag_deployed": false,
+          "estimated_visual_damage_usd": null,
+          "possible_fraud_signals": null,
+          "confidence_score": "0.95",
+          "ai_model": null,
+          "analysis_status": "COMPLETED",
+          "created_at": "2026-05-27T14:40:28.159033+00:00",
+          "analysis_id": "ef40cac4-f145-4d9a-9980-0eb3c589a09b",
+          "analysis_type": "police report",
+          "document_type": "police report",
+          "document_confidence": null,
+          "claimant_name": "Lukas Steiner",
+          "policy_number": "AT-MTR-558219",
+          "vehicle_registration": "AU333X",
+          "vin": "WBS202519941996",
+          "engine_number": null,
+          "incident_date": "2026-05-12",
+          "incident_location": "Vienna",
+          "repair_estimate_amount": 9000,
+          "document_complete": null,
+          "fraud_indicators": null,
+          "extracted_entities": null,
+          "visual_analysis": null,
+          "document_summary": "Police report for a vehicle collision involving a BMW M6 Competition with claimant Lukas Steiner, filed in Vienna, Austria on 2026-05-12. Document includes details consistent with the claim, with no immediate discrepancies identified. Estimated repair costs are €9,000.",
+          "vehicle_make": "BMW",
+          "vehicle_model": "M6 Competition"
+        },
+        "binary": {},
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get_Claims_Record1": {
+      "main": [
+        [
+          {
+            "node": "Normalize_And_Merge_Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to PDF": {
+      "main": [
+        [
+          {
+            "node": "uploads_PDF_Report_to_Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get_Claims_Record1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Decison_Assistance",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Decison_Assistance",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize_And_Merge_Evidence": {
+      "main": [
+        [
+          {
+            "node": "insurance_active_policies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insurance_active_policies": {
+      "main": [
+        [
+          {
+            "node": "insurance_policy_products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insurance_policy_products": {
+      "main": [
+        [
+          {
+            "node": "insurance_policy_rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insurance_policy_rules": {
+      "main": [
+        [
+          {
+            "node": "insurance_policy_rules1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insurance_policy_rules1": {
+      "main": [
+        [
+          {
+            "node": "Normalise_Decison_LLM_Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Template_Code": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Report_Generation_LLM",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Report_Generation_LLM",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decison_Assistance": {
+      "main": [
+        [
+          {
+            "node": "Report_Generation_LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Generation_LLM": {
+      "main": [
+        [
+          {
+            "node": "Report_Template_Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise_Decison_LLM_Inputs": {
+      "main": [
+        [
+          {
+            "node": "Decison_Assistance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "uploads_PDF_Report_to_Supabase": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "15e4e6c7-8ac0-43bb-a349-a93ff02f1b8a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ae4e48d5a6f5787668e3e31e4ca61012ccc4f24961dcb8bd327df4dd298b05cc"
+  },
+  "nodeGroups": [],
+  "id": "vAhOP56ircywvddf",
+  "tags": []
+}
